@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Kubernetes Command Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            margin: auto;
+        }
+
+        input,
+        button,
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .command-box {
+            background: #e9ecef;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .command-text {
+            text-align: left;
+            flex-grow: 1;
+            margin-right: 10px;
+            word-break: break-all;
+        }
+
+        .copy-btn {
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            min-width: 60px;
+        }
+
+        .mild {
+            border-left: 5px solid #28a745;
+        }
+
+        .moderate {
+            border-left: 5px solid #ffc107;
+        }
+
+        .severe {
+            border-left: 5px solid #dc3545;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            margin: 15px 0;
+            gap: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+        }
+
+        .green {
+            background-color: #28a745;
+        }
+
+        .yellow {
+            background-color: #ffc107;
+        }
+
+        .red {
+            background-color: #dc3545;
+        }
+
+        .warning-icon {
+            color: #dc3545;
+            margin-right: 5px;
+        }
+
+        .info-icon {
+            color: #17a2b8;
+            margin-right: 5px;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px;
+            background-color: #555;
+            color: #fff;
+            text-align: left;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            cursor: pointer;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            padding: 5px 15px;
+        }
+
+        .filter-btn.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .severity-toggle {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+
+        .severity-option {
+            cursor: pointer;
+            padding: 5px 15px;
+            border-radius: 20px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+        }
+
+        .severity-option.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .searchable-select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        /* Style for select2 dropdown */
+        .select2-container {
+            width: 100% !important;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+
+        .select2-selection {
+            min-height: 40px !important;
+            padding: 5px !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Enhanced Kubernetes Command Generator</h2>
+
+        <div class="input-container">
+            <label>Namespace:</label>
+            <input type="text" id="namespace" placeholder="Enter namespace">
+            <!-- <label>Namespace:</label>
+            <select id="namespace" class="searchable-select">
+                <option value="">Select namespace</option>
+                <option value="ambassador">ambassador</option>
+                <option value="argocd">argocd</option>
+                
+            </select> -->
+
+            <label>Resource Name:</label>
+            <input type="text" id="resourcename" placeholder="Enter pod/deployment/service name">
+            <!-- <label>Resource Name:</label>
+            <select id="resourcename" class="searchable-select">
+                <option value="">Select resource</option>
+                <option value="traffic-manager-54d6c8d747-74fcg">traffic-manager-54d6c8d747-74fcg</option>
+                <option value="argocd-application-controller-0">argocd-application-controller-0</option>
+                <option value="argocd-applicationset-controller-684cd5f5cc-66qh4">
+                    argocd-applicationset-controller-684cd5f5cc-66qh4</option>
+                <option value="argocd-dex-server-77c55fb54f-gxtdf">argocd-dex-server-77c55fb54f-gxtdf</option>
+                <option value="argocd-notifications-controller-69cd888b56-x82vp">
+                    argocd-notifications-controller-69cd888b56-x82vp</option>
+                
+            </select> -->
+
+            <label>Container Name (optional):</label>
+            <input type="text" id="containername" placeholder="Enter container name if applicable">
+
+            <label>Context (optional):</label>
+            <input type="text" id="context" placeholder="Enter Kubernetes context">
+
+            <button onclick="generateCommands()">Generate Commands</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color green"></div>
+                <span>Mild (Read-only)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color yellow"></div>
+                <span>Moderate</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color red"></div>
+                <span>Severe (Destructive)</span>
+            </div>
+        </div>
+
+        <div class="category-filter" id="categoryFilter">
+            <!-- Populated by JavaScript -->
+        </div>
+
+        <div class="severity-toggle">
+            <div class="severity-option active" data-severity="all">All Commands</div>
+            <div class="severity-option" data-severity="mild">Mild Only</div>
+            <div class="severity-option" data-severity="moderate">Moderate Only</div>
+            <div class="severity-option" data-severity="severe">Severe Only</div>
+        </div>
+
+        <div id="commands"></div>
+    </div>
+
+    <script>
+        // Define all possible commands
+        const allCommands = [
+            // MILD COMMANDS (Read-only operations)
+            {
+                cmd: `kubectl exec -it {resourcename} -n {namespace} -- printenv`,
+                desc: "Extract environment variables from the pod",
+                severity: "mild",
+                category: "pods"
+            },
+            {
+                cmd: "kubectl get pod {resourcename} -n {namespace} {context}",
+                desc: "Get basic pod information",
+                severity: "mild",
+                category: "pods"
+            },
+            {
+                cmd: "kubectl get pods -n {namespace} {context}",
+                desc: "List all pods in the namespace",
+                severity: "mild",
+                category: "pods"
+            },
+            {
+                cmd: "kubectl describe pod {resourcename} -n {namespace} {context}",
+                desc: "Get detailed pod information",
+                severity: "mild",
+                category: "pods"
+            },
+            {
+                cmd: "kubectl logs {resourcename} -n {namespace} {context}",
+                desc: "View logs of the specified pod",
+                severity: "mild",
+                category: "logs"
+            },
+            {
+                cmd: "kubectl logs {resourcename} -c {containername} -n {namespace} {context}",
+                desc: "View logs of a specific container in the pod",
+                severity: "mild",
+                category: "logs"
+            },
+            {
+                cmd: "kubectl logs {resourcename} -n {namespace} --tail=100 {context}",
+                desc: "View last 100 lines of pod logs",
+                severity: "mild",
+                category: "logs"
+            },
+            {
+                cmd: "kubectl logs {resourcename} -n {namespace} --follow {context}",
+                desc: "Stream logs from the pod",
+                severity: "mild",
+                category: "logs"
+            },
+            {
+                cmd: "kubectl logs {resourcename} -n {namespace} --previous {context}",
+                desc: "View logs from a previous container instance",
+                severity: "mild",
+                category: "logs"
+            },
+            {
+                cmd: "kubectl logs {resourcename} -n {namespace} --since=1h {context}",
+                desc: "View logs from the last hour",
+                severity: "mild",
+                category: "logs"
+            },
+            {
+                cmd: "kubectl get deployments -n {namespace} {context}",
+                desc: "List all deployments in the namespace",
+                severity: "mild",
+                category: "deployments"
+            },
+            {
+                cmd: "kubectl describe deployment {resourcename} -n {namespace} {context}",
+                desc: "Get detailed deployment information",
+                severity: "mild",
+                category: "deployments"
+            },
+            {
+                cmd: "kubectl get replicasets -n {namespace} {context}",
+                desc: "List all replica sets in the namespace",
+                severity: "mild",
+                category: "deployments"
+            },
+            {
+                cmd: "kubectl get services -n {namespace} {context}",
+                desc: "List all services in the namespace",
+                severity: "mild",
+                category: "services"
+            },
+            {
+                cmd: "kubectl describe service {resourcename} -n {namespace} {context}",
+                desc: "Get detailed service information",
+                severity: "mild",
+                category: "services"
+            },
+            {
+                cmd: "kubectl get configmap -n {namespace} {context}",
+                desc: "List all config maps in the namespace",
+                severity: "mild",
+                category: "config"
+            },
+            {
+                cmd: "kubectl describe configmap {resourcename} -n {namespace} {context}",
+                desc: "Get detailed configmap information",
+                severity: "mild",
+                category: "config"
+            },
+            {
+                cmd: "kubectl get secrets -n {namespace} {context}",
+                desc: "List all secrets in the namespace",
+                severity: "mild",
+                category: "security"
+            },
+            {
+                cmd: "kubectl describe secret {resourcename} -n {namespace} {context}",
+                desc: "Get detailed secret information (without showing secret values)",
+                severity: "mild",
+                category: "security"
+            },
+            {
+                cmd: "kubectl get events -n {namespace} {context}",
+                desc: "Get events from the namespace",
+                severity: "mild",
+                category: "monitoring"
+            },
+            {
+                cmd: "kubectl get events --field-selector involvedObject.name={resourcename} -n {namespace} {context}",
+                desc: "Get events related to a specific resource",
+                severity: "mild",
+                category: "monitoring"
+            },
+            {
+                cmd: "kubectl top pod {resourcename} -n {namespace} {context}",
+                desc: "Show resource usage (CPU, memory) for the pod",
+                severity: "mild",
+                category: "monitoring"
+            },
+            {
+                cmd: "kubectl top pods -n {namespace} {context}",
+                desc: "Show resource usage for all pods in namespace",
+                severity: "mild",
+                category: "monitoring"
+            },
+            {
+                cmd: "kubectl top nodes {context}",
+                desc: "Show resource usage for all nodes",
+                severity: "mild",
+                category: "monitoring"
+            },
+            {
+                cmd: "kubectl get hpa -n {namespace} {context}",
+                desc: "List all horizontal pod autoscalers",
+                severity: "mild",
+                category: "scaling"
+            },
+            {
+                cmd: "kubectl describe hpa {resourcename} -n {namespace} {context}",
+                desc: "Get detailed horizontal pod autoscaler information",
+                severity: "mild",
+                category: "scaling"
+            },
+            {
+                cmd: "kubectl get ingress -n {namespace} {context}",
+                desc: "List all ingress resources",
+                severity: "mild",
+                category: "network"
+            },
+            {
+                cmd: "kubectl describe ingress {resourcename} -n {namespace} {context}",
+                desc: "Get detailed ingress information",
+                severity: "mild",
+                category: "network"
+            },
+            {
+                cmd: "kubectl get pv {context}",
+                desc: "List all persistent volumes",
+                severity: "mild",
+                category: "storage"
+            },
+            {
+                cmd: "kubectl get pvc -n {namespace} {context}",
+                desc: "List all persistent volume claims",
+                severity: "mild",
+                category: "storage"
+            },
+            {
+                cmd: "kubectl describe pvc {resourcename} -n {namespace} {context}",
+                desc: "Get detailed persistent volume claim information",
+                severity: "mild",
+                category: "storage"
+            },
+            {
+                cmd: "kubectl get storageclass {context}",
+                desc: "List all storage classes",
+                severity: "mild",
+                category: "storage"
+            },
+            {
+                cmd: "kubectl get cronjobs -n {namespace} {context}",
+                desc: "List all cron jobs",
+                severity: "mild",
+                category: "jobs"
+            },
+            {
+                cmd: "kubectl get jobs -n {namespace} {context}",
+                desc: "List all jobs",
+                severity: "mild",
+                category: "jobs"
+            },
+            {
+                cmd: "kubectl describe job {resourcename} -n {namespace} {context}",
+                desc: "Get detailed job information",
+                severity: "mild",
+                category: "jobs"
+            },
+            {
+                cmd: "kubectl get statefulsets -n {namespace} {context}",
+                desc: "List all stateful sets",
+                severity: "mild",
+                category: "stateful"
+            },
+            {
+                cmd: "kubectl describe statefulset {resourcename} -n {namespace} {context}",
+                desc: "Get detailed stateful set information",
+                severity: "mild",
+                category: "stateful"
+            },
+            {
+                cmd: "kubectl api-resources {context}",
+                desc: "List all supported API resources",
+                severity: "mild",
+                category: "cluster"
+            },
+            {
+                cmd: "kubectl explain pod {context}",
+                desc: "Get documentation of pod resource",
+                severity: "mild",
+                category: "help"
+            },
+            {
+                cmd: "kubectl explain deployment {context}",
+                desc: "Get documentation of deployment resource",
+                severity: "mild",
+                category: "help"
+            },
+            {
+                cmd: "kubectl explain service {context}",
+                desc: "Get documentation of service resource",
+                severity: "mild",
+                category: "help"
+            },
+
+            // MODERATE COMMANDS (Modification but non-destructive)
+            {
+                cmd: "kubectl port-forward {resourcename} 8080:80 -n {namespace} {context}",
+                desc: "Forward local port 8080 to the pod's port 80",
+                severity: "moderate",
+                category: "network"
+            },
+            {
+                cmd: "kubectl port-forward service/{resourcename} 8080:80 -n {namespace} {context}",
+                desc: "Forward local port 8080 to service port 80",
+                severity: "moderate",
+                category: "network"
+            },
+            {
+                cmd: "kubectl exec -it {resourcename} -n {namespace} -- /bin/sh {context}",
+                desc: "Access the pod shell",
+                severity: "moderate",
+                category: "access"
+            },
+            {
+                cmd: "kubectl exec -it {resourcename} -c {containername} -n {namespace} -- /bin/sh {context}",
+                desc: "Access a specific container's shell in the pod",
+                severity: "moderate",
+                category: "access"
+            },
+            {
+                cmd: "kubectl exec -it {resourcename} -n {namespace} -- /bin/bash {context}",
+                desc: "Access the pod shell with bash",
+                severity: "moderate",
+                category: "access"
+            },
+            {
+                cmd: "kubectl cp {resourcename}:/path/to/file ./local-path -n {namespace} {context}",
+                desc: "Copy a file from the pod to local machine",
+                severity: "moderate",
+                category: "files"
+            },
+            {
+                cmd: "kubectl cp ./local-file {resourcename}:/path/ -n {namespace} {context}",
+                desc: "Copy a local file to the pod",
+                severity: "moderate",
+                category: "files"
+            },
+            {
+                cmd: "kubectl rollout status deployment/{resourcename} -n {namespace} {context}",
+                desc: "Check the status of a deployment rollout",
+                severity: "moderate",
+                category: "deployments"
+            },
+            {
+                cmd: "kubectl rollout history deployment/{resourcename} -n {namespace} {context}",
+                desc: "View rollout history of a deployment",
+                severity: "moderate",
+                category: "deployments"
+            },
+            {
+                cmd: "kubectl rollout pause deployment/{resourcename} -n {namespace} {context}",
+                desc: "Pause a deployment rollout",
+                severity: "moderate",
+                warning: "This will pause the current rollout and prevent updates",
+                category: "deployments"
+            },
+            {
+                cmd: "kubectl rollout resume deployment/{resourcename} -n {namespace} {context}",
+                desc: "Resume a paused deployment",
+                severity: "moderate",
+                category: "deployments"
+            },
+            {
+                cmd: "kubectl scale deployment/{resourcename} --replicas=3 -n {namespace} {context}",
+                desc: "Scale a deployment to 3 replicas",
+                severity: "moderate",
+                warning: "This will change the number of running instances",
+                category: "scaling"
+            },
+            {
+                cmd: "kubectl autoscale deployment/{resourcename} --min=2 --max=5 --cpu-percent=80 -n {namespace} {context}",
+                desc: "Create a horizontal pod autoscaler",
+                severity: "moderate",
+                category: "scaling"
+            },
+            {
+                cmd: "kubectl label pod {resourcename} key=value -n {namespace} {context}",
+                desc: "Add a label to a pod",
+                severity: "moderate",
+                category: "configuration"
+            },
+            {
+                cmd: "kubectl annotate pod {resourcename} key=value -n {namespace} {context}",
+                desc: "Add an annotation to a pod",
+                severity: "moderate",
+                category: "configuration"
+            },
+            {
+                cmd: "kubectl taint node {resourcename} key=value:NoSchedule {context}",
+                desc: "Add a taint to a node",
+                severity: "moderate",
+                warning: "This may prevent pods from being scheduled on this node",
+                category: "nodes"
+            },
+            {
+                cmd: "kubectl cordon {resourcename} {context}",
+                desc: "Mark node as unschedulable",
+                severity: "moderate",
+                warning: "New pods will not be scheduled to this node",
+                category: "nodes"
+            },
+            {
+                cmd: "kubectl uncordon {resourcename} {context}",
+                desc: "Mark node as schedulable",
+                severity: "moderate",
+                category: "nodes"
+            },
+            {
+                cmd: "kubectl edit deployment {resourcename} -n {namespace} {context}",
+                desc: "Edit a deployment configuration",
+                severity: "moderate",
+                warning: "Changes may trigger pod restarts",
+                category: "configuration"
+            },
+            {
+                cmd: "kubectl edit service {resourcename} -n {namespace} {context}",
+                desc: "Edit a service configuration",
+                severity: "moderate",
+                category: "configuration"
+            },
+            {
+                cmd: "kubectl patch deployment {resourcename} -p '{\"spec\":{\"replicas\":2}}' -n {namespace} {context}",
+                desc: "Patch a deployment to change replicas",
+                severity: "moderate",
+                warning: "This will change the number of running instances",
+                category: "configuration"
+            },
+            {
+                cmd: "kubectl set image deployment/{resourcename} container-name=new-image:tag -n {namespace} {context}",
+                desc: "Update the image of a deployment",
+                severity: "moderate",
+                warning: "This will trigger pod restarts with the new image",
+                category: "configuration"
+            },
+
+            // SEVERE COMMANDS (Potentially destructive)
+            {
+                cmd: "kubectl delete pod {resourcename} -n {namespace} {context}",
+                desc: "Delete the specified pod",
+                severity: "severe",
+                warning: "⚠️ This will immediately terminate the pod (if part of a deployment, it will be recreated)",
+                category: "delete"
+            },
+            {
+                cmd: "kubectl delete deployment {resourcename} -n {namespace} {context}",
+                desc: "Delete a deployment",
+                severity: "severe",
+                warning: "⚠️ This will terminate all pods created by this deployment",
+                category: "delete"
+            },
+            {
+                cmd: "kubectl delete service {resourcename} -n {namespace} {context}",
+                desc: "Delete a service",
+                severity: "severe",
+                warning: "⚠️ This will remove service discovery and load balancing for pods",
+                category: "delete"
+            },
+            {
+                cmd: "kubectl delete namespace {namespace} {context}",
+                desc: "Delete an entire namespace",
+                severity: "severe",
+                warning: "⚠️ DANGER: This will delete ALL resources in the namespace",
+                category: "delete"
+            },
+            {
+                cmd: "kubectl delete pvc {resourcename} -n {namespace} {context}",
+                desc: "Delete a persistent volume claim",
+                severity: "severe",
+                warning: "⚠️ This may result in data loss depending on your storage class reclaim policy",
+                category: "delete"
+            },
+            {
+                cmd: "kubectl rollout restart deployment/{resourcename} -n {namespace} {context}",
+                desc: "Restart a deployment (rolling restart of pods)",
+                severity: "severe",
+                warning: "⚠️ This will restart all pods in the deployment (rolling restart)",
+                category: "operations"
+            },
+            {
+                cmd: "kubectl rollout undo deployment/{resourcename} -n {namespace} {context}",
+                desc: "Rollback to the previous deployment",
+                severity: "severe",
+                warning: "⚠️ This will revert to the previous configuration and may cause service disruption",
+                category: "operations"
+            },
+            {
+                cmd: "kubectl rollout undo deployment/{resourcename} --to-revision=2 -n {namespace} {context}",
+                desc: "Rollback to a specific revision",
+                severity: "severe",
+                warning: "⚠️ This will revert to a specific previous configuration and may cause service disruption",
+                category: "operations"
+            },
+            {
+                cmd: "kubectl drain {resourcename} --ignore-daemonsets {context}",
+                desc: "Drain a node (evict pods for maintenance)",
+                severity: "severe",
+                warning: "⚠️ This will evict all pods from the node",
+                category: "nodes"
+            },
+            {
+                cmd: "kubectl delete node {resourcename} {context}",
+                desc: "Delete a node from the cluster",
+                severity: "severe",
+                warning: "⚠️ DANGER: This removes the node from cluster control",
+                category: "nodes"
+            },
+            {
+                cmd: "kubectl replace --force -f file.yaml",
+                desc: "Force replace a resource",
+                severity: "severe",
+                warning: "⚠️ This will delete and recreate the resource, causing downtime",
+                category: "operations"
+            },
+            {
+                cmd: "kubectl apply -f file.yaml --prune -l app=myapp",
+                desc: "Apply with pruning (removes unlisted resources)",
+                severity: "severe",
+                warning: "⚠️ This will delete resources that aren't in the file but match the label",
+                category: "operations"
+            },
+            {
+                cmd: "kubectl delete --all pods -n {namespace} {context}",
+                desc: "Delete all pods in a namespace",
+                severity: "severe",
+                warning: "⚠️ DANGER: This deletes all pods in the namespace (deployment-managed pods will restart)",
+                category: "delete"
+            },
+            {
+                cmd: "kubectl delete --all deployments -n {namespace} {context}",
+                desc: "Delete all deployments in a namespace",
+                severity: "severe",
+                warning: "⚠️ DANGER: This terminates all deployments and their pods",
+                category: "delete"
+            },
+            {
+                cmd: "kubectl delete --all services -n {namespace} {context}",
+                desc: "Delete all services in a namespace",
+                severity: "severe",
+                warning: "⚠️ DANGER: This removes all services, impacting connectivity",
+                category: "delete"
+            }
+        ];
+
+        // Extract unique categories
+        const categories = [...new Set(allCommands.map(cmd => cmd.category))].sort();
+
+        // Initialize category filter buttons
+        function initCategoryFilters() {
+            const filterContainer = document.getElementById('categoryFilter');
+
+            // Add "All" button
+            const allBtn = document.createElement('div');
+            allBtn.className = 'filter-btn active';
+            allBtn.setAttribute('data-category', 'all');
+            allBtn.textContent = 'All';
+            filterContainer.appendChild(allBtn);
+
+            // Add category buttons
+            categories.forEach(category => {
+                const btn = document.createElement('div');
+                btn.className = 'filter-btn';
+                btn.setAttribute('data-category', category);
+                btn.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+                filterContainer.appendChild(btn);
+            });
+
+            // Add event listeners
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    applyFilters();
+                });
+            });
+
+            // Add event listeners for severity toggles
+            document.querySelectorAll('.severity-option').forEach(option => {
+                option.addEventListener('click', function () {
+                    document.querySelectorAll('.severity-option').forEach(o => o.classList.remove('active'));
+                    this.classList.add('active');
+                    applyFilters();
+                });
+            });
+        }
+
+        // Apply both category and severity filters
+        function applyFilters() {
+            const selectedCategory = document.querySelector('.filter-btn.active').getAttribute('data-category');
+            const selectedSeverity = document.querySelector('.severity-option.active').getAttribute('data-severity');
+
+            document.querySelectorAll('.command-box').forEach(box => {
+                const boxCategory = box.getAttribute('data-category');
+                const boxSeverity = box.getAttribute('data-severity');
+
+                const categoryMatch = selectedCategory === 'all' || boxCategory === selectedCategory;
+                const severityMatch = selectedSeverity === 'all' || boxSeverity === selectedSeverity;
+
+                box.style.display = (categoryMatch && severityMatch) ? 'flex' : 'none';
+            });
+        }
+
+        function generateCommands() {
+            const ns = document.getElementById("namespace").value;
+            const resource = document.getElementById("resourcename").value;
+            const container = document.getElementById("containername").value;
+            const ctx = document.getElementById("context").value;
+
+            if (!ns || !resource) {
+                alert("Please enter both Namespace and Resource Name");
+                return;
+            }
+
+            // Apply context flag if provided
+            const contextFlag = ctx ? `--context=${ctx}` : '';
+
+            let commandHTML = "";
+
+            allCommands.forEach(command => {
+                // Replace placeholders
+                let cmd = command.cmd
+                    .replace(/{namespace}/g, ns)
+                    .replace(/{resourcename}/g, resource)
+                    .replace(/{containername}/g, container)
+                    .replace(/{context}/g, contextFlag);
+
+                // Skip commands that require container name if not provided
+                if (cmd.includes('containername') && !container) {
+                    return;
+                }
+
+                // Create command box with severity class
+                commandHTML += `
+                    <div class='command-box ${command.severity}' data-category='${command.category}' data-severity='${command.severity}'>
+                        <div class="command-text tooltip">
+                            ${command.severity === 'severe' ? '<i class="fas fa-exclamation-triangle warning-icon"></i>' : ''}
+                            ${command.severity === 'moderate' && command.warning ? '<i class="fas fa-info-circle info-icon"></i>' : ''}
+                            <span>${cmd}</span>
+                            <span class="tooltiptext">
+                                ${command.desc}
+                                ${command.warning ? '<br><strong>' + command.warning + '</strong>' : ''}
+                            </span>
+                        </div>
+                        <button class="copy-btn" onclick="copyToClipboard('${cmd.replace(/'/g, "\\'")}')">Copy</button>
+                    </div>
+                `;
+            });
+
+            document.getElementById("commands").innerHTML = commandHTML;
+
+            // Apply initial filters
+            applyFilters();
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    // Create and display a temporary toast notification
+                    const toast = document.createElement('div');
+                    toast.style.position = 'fixed';
+                    toast.style.bottom = '20px';
+                    toast.style.left = '50%';
+                    toast.style.transform = 'translateX(-50%)';
+                    toast.style.backgroundColor = '#28a745';
+                    toast.style.color = 'white';
+                    toast.style.padding = '10px 20px';
+                    toast.style.borderRadius = '5px';
+                    toast.style.zIndex = '1000';
+                    toast.textContent = 'Command copied to clipboard!';
+
+                    document.body.appendChild(toast);
+
+                    // Remove the toast after 2 seconds
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 2000);
+                })
+                .catch(err => {
+                    alert('Failed to copy: ' + err);
+                });
+        }
+
+        // Initialize the category filters on page load
+        window.onload = function () {
+            initCategoryFilters();
+        };
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kafka Command Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .instructions {
+            background: #f8f9fa;
+            padding: 25px;
+            border-left: 5px solid #3498db;
+            margin: 20px;
+            border-radius: 10px;
+        }
+
+        .instructions h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+
+        .instructions code {
+            background: #e9ecef;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            color: #495057;
+        }
+
+        .search-container {
+            padding: 20px;
+            background: white;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 50px;
+            outline: none;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+
+        .search-box:focus {
+            border-color: #3498db;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(52, 152, 219, 0.1);
+        }
+
+        .categories {
+            padding: 0 20px 20px;
+        }
+
+        .category {
+            margin-bottom: 25px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-header {
+            padding: 20px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .category-header:hover {
+            transform: translateY(-2px);
+        }
+
+        .normal .category-header {
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .mild .category-header {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .critical .category-header {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .category-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .toggle-icon {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .category.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .category-content {
+            background: white;
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .category.collapsed .category-content {
+            max-height: 0;
+        }
+
+        .command-item {
+            padding: 20px;
+            border-bottom: 1px solid #f1f3f4;
+            transition: background 0.2s ease;
+        }
+
+        .command-item:hover {
+            background: #f8f9fa;
+        }
+
+        .command-item:last-child {
+            border-bottom: none;
+        }
+
+        .command-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .command-code {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            position: relative;
+            overflow-x: auto;
+            white-space: pre;
+            line-height: 1.4;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+
+        .copy-btn.copied {
+            background: #27ae60;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            font-size: 1.1rem;
+        }
+
+        .footer {
+            background: #34495e;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .footer h4 {
+            margin-bottom: 10px;
+            color: #ecf0f1;
+        }
+
+        .footer p {
+            opacity: 0.8;
+            line-height: 1.6;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .instructions {
+                margin: 10px;
+                padding: 20px;
+            }
+
+            .command-code {
+                font-size: 0.8rem;
+                padding: 12px;
+            }
+
+            .copy-btn {
+                position: static;
+                margin-top: 10px;
+                width: 100%;
+            }
+        }
+
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+
+        .instructions {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin: 20px 0;
+            padding: 20px 25px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.06);
+        }
+
+        .instructions h2 {
+            margin-bottom: 10px;
+            color: #111827;
+        }
+
+        .instructions h3 {
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+            color: #1f2937;
+        }
+
+        .instructions p,
+        .instructions ul li {
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        /* Command Box */
+        .command-code {
+            background: #1e1e1e;
+            color: #d1d5db;
+            padding: 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-family: "Fira Code", monospace;
+            overflow-x: auto;
+            margin-bottom: 10px;
+        }
+
+        /* Optional Copy Button */
+        .copy-btn {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 10px;
+            width: fit-content;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.2s ease;
+            display: inline-block;
+        }
+
+        .copy-btn:hover {
+            background: #1d4ed8;
+        }
+
+        /* Icons (if you use them inside content) */
+        .icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Kafka Command Dashboard</h1>
+            <p>Your comprehensive toolkit for Kafka operations</p>
+        </div>
+        <div class="instructions">
+            <h2>📌 Kafka UI Setup & Usage Guide</h2>
+            <p>Steps to install Docker, create a reusable Kafka UI container, and restart it anytime.</p>
+
+            <h3>🧩 1. Install Docker (if not installed)</h3>
+            <pre class="command-code">
+sudo apt update
+sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+# logout & login again after this step
+    </pre>
+
+            <h3>📦 2. Create Kafka UI Container (run once)</h3>
+            <pre class="command-code">
+docker create --name kafka-ui \
+  -p 8080:8080 \
+  -e KAFKA_CLUSTERS_0_NAME=prod \
+  -e KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=52.172.216.129:9095 \
+  provectuslabs/kafka-ui
+    </pre>
+
+            <h3>🚀 3. Start Kafka UI</h3>
+            <pre class="command-code">
+docker start kafka-ui
+    </pre>
+
+            <h3>🛑 4. Stop Kafka UI</h3>
+            <pre class="command-code">
+docker stop kafka-ui
+    </pre>
+
+            <h3>🔍 5. Check Container Status</h3>
+            <pre class="command-code">
+docker ps -a
+    </pre>
+
+            <h3>🌐 6. Access Kafka UI</h3>
+            <pre class="command-code">
+http://localhost:8080
+    </pre>
+
+            <h3>🧹 7. Remove old/unused container (optional)</h3>
+            <pre class="command-code">
+docker rm kind_jackson
+    </pre>
+
+            <h3>📖 Notes</h3>
+            <ul>
+                <li>Kafka UI connects using the broker you provided: <code>52.172.216.129:9095</code></li>
+                <li>Telepresence + VPN must be active for cluster access.</li>
+                <li>The container named <b>kafka-ui</b> persists config — no need to recreate it.</li>
+                <li>Open <b>Messages</b> tab inside Kafka UI to inspect live topic data.</li>
+            </ul>
+        </div>
+
+
+        <div class="instructions">
+            <h3>
+                <span class="icon">⚡</span>
+                Setup Instructions - Follow These Steps First!
+            </h3>
+            <ol>
+                <li><strong>Connect to VPN:</strong> Ensure you're connected to your organization's VPN before
+                    proceeding.</li>
+                <li><strong>Connect via Telepresence:</strong> Try connecting using these commands sequentially:
+                    <ul style="margin-top: 8px;">
+                        <li><code>telepresence connect</code> (try this first)</li>
+                        <li><code>telePresenceNew connect</code> (if the first one fails)</li>
+                    </ul>
+                    <em>Note: Two different telepresence binaries are listed as backup options for connection
+                        stability.</em>
+                </li>
+                <li><strong>Navigate to Kafka Directory:</strong> Open terminal and run:
+                    <code>cd ~/kafka_2.13-3.9.1/</code>
+                </li>
+                <li><strong>Ready to Go:</strong> Now you can copy and run commands from the dashboard below!</li>
+            </ol>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-box" placeholder="🔍 Search commands by title or content..."
+                id="searchInput">
+        </div>
+
+        <div class="categories">
+            <div class="category normal" data-category="normal">
+                <div class="category-header" onclick="toggleCategory('normal')">
+                    <div class="category-title">
+                        <span class="icon">✅</span>
+                        Normal Commands
+                        <span class="badge">Safe Operations</span>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="category-content">
+                    <div class="command-item" data-search="list all topics kafka-topics">
+                        <div class="command-title">List All Topics</div>
+                        <div class="command-code">bin/kafka-topics.sh --bootstrap-server 10.21.0.222:9094 --list<button
+                                class="copy-btn" onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="list all consumer groups kafka-consumer-groups">
+                        <div class="command-title">List All Consumer Groups</div>
+                        <div class="command-code">bin/kafka-consumer-groups.sh --bootstrap-server 10.21.0.222:9094
+                            --list<button class="copy-btn" onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="check kafka version">
+                        <div class="command-title">Check Kafka Version</div>
+                        <div class="command-code">bin/kafka-topics.sh --version<button class="copy-btn"
+                                onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="list kafka configs">
+                        <div class="command-title">List Kafka Configs</div>
+                        <div class="command-code">bin/kafka-configs.sh --bootstrap-server 10.21.0.222:9094 --entity-type
+                            brokers --describe<button class="copy-btn" onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category mild" data-category="mild">
+                <div class="category-header" onclick="toggleCategory('mild')">
+                    <div class="category-title">
+                        <span class="icon">⚠️</span>
+                        Mild Commands
+                        <span class="badge">Read Operations</span>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="category-content">
+                    <div class="command-item" data-search="describe topic kafka-topics">
+                        <div class="command-title">Describe a Topic</div>
+                        <div class="command-code">bin/kafka-topics.sh --bootstrap-server 10.21.0.222:9094 --describe
+                            --topic &lt;your-topic-name&gt;<button class="copy-btn"
+                                onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="describe consumer group kafka-consumer-groups">
+                        <div class="command-title">Describe a Consumer Group</div>
+                        <div class="command-code">bin/kafka-consumer-groups.sh --bootstrap-server 10.21.0.222:9094
+                            --describe --group &lt;consumer-group-id&gt;<button class="copy-btn"
+                                onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="consume messages from topic kafka-console-consumer">
+                        <div class="command-title">Consume Messages from Topic (from beginning)</div>
+                        <div class="command-code">bin/kafka-console-consumer.sh --bootstrap-server 10.21.0.222:9094
+                            --topic &lt;your-topic-name&gt; --from-beginning<button class="copy-btn"
+                                onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="consume latest messages kafka-console-consumer">
+                        <div class="command-title">Consume Latest Messages</div>
+                        <div class="command-code">bin/kafka-console-consumer.sh --bootstrap-server 10.21.0.222:9094
+                            --topic &lt;your-topic-name&gt;<button class="copy-btn"
+                                onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="check consumer group lag offset">
+                        <div class="command-title">Check Consumer Group Lag</div>
+                        <div class="command-code">bin/kafka-consumer-groups.sh --bootstrap-server 10.21.0.222:9094
+                            --describe --group &lt;consumer-group-id&gt; --members --verbose<button class="copy-btn"
+                                onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="get topic partitions info">
+                        <div class="command-title">Get Topic Partitions Info</div>
+                        <div class="command-code">bin/kafka-log-dirs.sh --bootstrap-server 10.21.0.222:9094 --describe
+                            --topic-list &lt;your-topic-name&gt;<button class="copy-btn"
+                                onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="category critical" data-category="critical">
+                <div class="category-header" onclick="toggleCategory('critical')">
+                    <div class="category-title">
+                        <span class="icon">🚨</span>
+                        Critical Commands
+                        <span class="badge">Use with Caution</span>
+                    </div>
+                    <span class="toggle-icon">▼</span>
+                </div>
+                <div class="category-content">
+                    <div class="command-item" data-search="produce test message kafka-console-producer">
+                        <div class="command-title">Produce a Test Message</div>
+                        <div class="command-code">bin/kafka-console-producer.sh --bootstrap-server 10.21.0.222:9094
+                            --topic &lt;your-topic-name&gt;<button class="copy-btn"
+                                onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="create new topic kafka-topics">
+                        <div class="command-title">Create New Topic</div>
+                        <div class="command-code">bin/kafka-topics.sh --bootstrap-server 10.21.0.222:9094 --create
+                            --topic &lt;your-topic-name&gt; --partitions 3 --replication-factor 1<button
+                                class="copy-btn" onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="delete topic kafka-topics">
+                        <div class="command-title">Delete Topic (DANGEROUS)</div>
+                        <div class="command-code">bin/kafka-topics.sh --bootstrap-server 10.21.0.222:9094 --delete
+                            --topic &lt;your-topic-name&gt;<button class="copy-btn"
+                                onclick="copyCommand(this)">Copy</button></div>
+                    </div>
+                    <div class="command-item" data-search="reset consumer group offset">
+                        <div class="command-title">Reset Consumer Group Offset</div>
+                        <div class="command-code">bin/kafka-consumer-groups.sh --bootstrap-server 10.21.0.222:9094
+                            --group &lt;consumer-group-id&gt; --reset-offsets --topic &lt;your-topic-name&gt;
+                            --to-earliest --execute<button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                        </div>
+                    </div>
+                    <div class="command-item" data-search="alter topic configuration">
+                        <div class="command-title">Alter Topic Configuration</div>
+                        <div class="command-code">bin/kafka-configs.sh --bootstrap-server 10.21.0.222:9094 --entity-type
+                            topics --entity-name &lt;your-topic-name&gt; --alter --add-config
+                            retention.ms=86400000<button class="copy-btn" onclick="copyCommand(this)">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="no-results hidden" id="noResults">
+            <h3>🔍 No commands found</h3>
+            <p>Try adjusting your search terms or browse the categories above.</p>
+        </div>
+
+        <div class="footer">
+            <h4>📋 Important Notes</h4>
+            <p>Remember to replace placeholders like <code>&lt;your-topic-name&gt;</code> and
+                <code>&lt;consumer-group-id&gt;</code> with actual values. All commands use the bootstrap server at
+                <strong>10.21.0.222:9094</strong>. Be especially careful with Critical commands as they can modify or
+                delete data.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function toggleCategory(categoryName) {
+            const category = document.querySelector(`[data-category="${categoryName}"]`);
+            category.classList.toggle('collapsed');
+        }
+
+        function copyCommand(button) {
+            const commandText = button.parentElement.textContent.replace('Copy', '').trim();
+            navigator.clipboard.writeText(commandText).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = commandText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+
+                button.textContent = 'Copied!';
+                button.classList.add('copied');
+                setTimeout(() => {
+                    button.textContent = 'Copy';
+                    button.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        function filterCommands() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const commandItems = document.querySelectorAll('.command-item');
+            const categories = document.querySelectorAll('.category');
+            const noResults = document.getElementById('noResults');
+            let hasVisibleResults = false;
+
+            commandItems.forEach(item => {
+                const searchData = item.getAttribute('data-search').toLowerCase();
+                const commandText = item.querySelector('.command-code').textContent.toLowerCase();
+                const titleText = item.querySelector('.command-title').textContent.toLowerCase();
+
+                const isVisible = searchData.includes(searchTerm) ||
+                    commandText.includes(searchTerm) ||
+                    titleText.includes(searchTerm);
+
+                if (isVisible) {
+                    item.classList.remove('hidden');
+                    hasVisibleResults = true;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            // Show/hide categories based on visible commands
+            categories.forEach(category => {
+                const visibleCommands = category.querySelectorAll('.command-item:not(.hidden)');
+                if (visibleCommands.length > 0) {
+                    category.classList.remove('hidden');
+                    // Expand category if search is active
+                    if (searchTerm) {
+                        category.classList.remove('collapsed');
+                    }
+                } else {
+                    category.classList.add('hidden');
+                }
+            });
+
+            // Show/hide no results message
+            if (hasVisibleResults || !searchTerm) {
+                noResults.classList.add('hidden');
+            } else {
+                noResults.classList.remove('hidden');
+            }
+        }
+
+        // Initialize search functionality
+        document.getElementById('searchInput').addEventListener('input', filterCommands);
+
+        // Initialize with all categories expanded
+        document.addEventListener('DOMContentLoaded', function () {
+            // Categories start expanded by default
+        });
+    </script>
+</body>
+
+</html>

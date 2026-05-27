@@ -1,0 +1,2570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grep Command Studio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #080c10;
+    --bg2: #0d1117;
+    --bg3: #161b22;
+    --bg4: #1c2333;
+    --surface: rgba(22,27,34,0.7);
+    --border: rgba(48,54,61,0.8);
+    --border-bright: rgba(56,139,253,0.3);
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #6e7681;
+    --accent: #58a6ff;
+    --accent2: #79c0ff;
+    --green: #3fb950;
+    --green2: #56d364;
+    --yellow: #d29922;
+    --yellow2: #e3b341;
+    --red: #f85149;
+    --red2: #ff7b72;
+    --purple: #bc8cff;
+    --orange: #ffa657;
+    --cyan: #39d353;
+    --teal: #56d4dd;
+    --glow: rgba(88,166,255,0.15);
+    --glow2: rgba(63,185,80,0.12);
+    --radius: 8px;
+    --radius2: 12px;
+    --radius3: 16px;
+    --mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+    --sans: 'Syne', system-ui, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--mono);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(56,139,253,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56,139,253,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -20%;
+    width: 60%;
+    height: 70%;
+    background: radial-gradient(ellipse, rgba(56,139,253,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* LAYOUT */
+  .app-wrapper { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 16px 80px; }
+
+  /* HEADER */
+  .header {
+    padding: 24px 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 20px rgba(88,166,255,0.3);
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    font-family: var(--sans);
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--teal));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 1px;
+  }
+
+  .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-bottom: 20px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius);
+    color: var(--text2);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .tab-btn:hover { color: var(--text); background: var(--bg4); }
+  .tab-btn.active {
+    background: var(--bg4);
+    color: var(--accent);
+    box-shadow: 0 0 10px rgba(88,166,255,0.15);
+  }
+
+  /* TAB PANELS */
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: rgba(48,54,61,1); }
+
+  .card-header {
+    padding: 14px 18px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .card-title {
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.3px;
+  }
+
+  .card-title .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  .card-body { padding: 18px; }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .main-grid { display: grid; grid-template-columns: 1fr 380px; gap: 16px; }
+
+  @media (max-width: 1100px) { .main-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 700px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* FORM ELEMENTS */
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label {
+    display: block;
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 5px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  input[type="text"]:focus,
+  input[type="number"]:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(88,166,255,0.1);
+  }
+
+  input[type="text"]::placeholder { color: var(--text3); }
+
+  select { cursor: pointer; }
+  select option { background: var(--bg3); }
+
+  /* TOGGLE */
+  .toggle-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .toggle-item:hover { border-color: var(--border-bright); background: var(--bg3); }
+  .toggle-item.active { border-color: var(--accent); background: rgba(88,166,255,0.05); }
+
+  .toggle-switch {
+    width: 32px; height: 18px;
+    background: var(--bg4);
+    border-radius: 9px;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .toggle-item.active .toggle-switch { background: var(--accent); }
+
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: white;
+    transition: transform 0.2s;
+  }
+  .toggle-item.active .toggle-switch::after { transform: translateX(14px); }
+
+  .toggle-label { font-size: 12px; color: var(--text2); }
+  .toggle-item.active .toggle-label { color: var(--text); }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg);
+    box-shadow: 0 0 16px rgba(88,166,255,0.3);
+  }
+  .btn-primary:hover { background: var(--accent2); box-shadow: 0 0 24px rgba(88,166,255,0.4); transform: translateY(-1px); }
+
+  .btn-green {
+    background: var(--green);
+    color: var(--bg);
+    box-shadow: 0 0 16px rgba(63,185,80,0.3);
+  }
+  .btn-green:hover { background: var(--green2); transform: translateY(-1px); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text3); background: var(--bg3); }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--red);
+    border: 1px solid rgba(248,81,73,0.3);
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+  .btn-danger:hover { background: rgba(248,81,73,0.1); }
+
+  .btn-sm { padding: 6px 12px; font-size: 11px; }
+  .btn-xs { padding: 4px 8px; font-size: 10px; }
+  .btn-lg { padding: 12px 24px; font-size: 14px; }
+
+  /* COMMAND PREVIEW */
+  .command-preview {
+    background: var(--bg);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius2);
+    padding: 0;
+    position: sticky;
+    top: 16px;
+  }
+
+  .cmd-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    border-radius: var(--radius2) var(--radius2) 0 0;
+  }
+
+  .cmd-dots { display: flex; gap: 5px; }
+  .cmd-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .cmd-dot.red { background: #ff5f57; }
+  .cmd-dot.yellow { background: #ffbd2e; }
+  .cmd-dot.green { background: #28ca41; }
+
+  .cmd-title { font-size: 11px; color: var(--text3); margin-left: 6px; letter-spacing: 0.5px; }
+
+  .cmd-display {
+    padding: 20px;
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.8;
+    word-break: break-all;
+    min-height: 80px;
+  }
+
+  .cmd-prompt { color: var(--green); margin-right: 8px; }
+  .cmd-bin { color: var(--accent); font-weight: 600; }
+  .cmd-flag { color: var(--yellow2); }
+  .cmd-value { color: var(--purple); }
+  .cmd-path { color: var(--orange); }
+  .cmd-pattern { color: var(--red2); font-weight: 600; }
+
+  /* FLAG CHIPS */
+  .flags-section { padding: 14px 18px; border-top: 1px solid var(--border); }
+  .flags-title { font-size: 10px; color: var(--text3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+
+  .flag-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .flag-chip {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--mono);
+    font-weight: 500;
+    cursor: help;
+    position: relative;
+    transition: all 0.2s;
+  }
+
+  .flag-chip.blue { background: rgba(88,166,255,0.15); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+  .flag-chip.green { background: rgba(63,185,80,0.15); color: var(--green2); border: 1px solid rgba(63,185,80,0.3); }
+  .flag-chip.yellow { background: rgba(227,179,65,0.15); color: var(--yellow2); border: 1px solid rgba(227,179,65,0.3); }
+  .flag-chip.purple { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+  .flag-chip.red { background: rgba(248,81,73,0.15); color: var(--red2); border: 1px solid rgba(248,81,73,0.3); }
+  .flag-chip.teal { background: rgba(86,212,221,0.15); color: var(--teal); border: 1px solid rgba(86,212,221,0.3); }
+
+  .flag-chip:hover { transform: translateY(-2px); }
+
+  /* TOOLTIPS */
+  .flag-chip[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg4);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-size: 11px;
+    white-space: nowrap;
+    z-index: 100;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    pointer-events: none;
+    max-width: 220px;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+
+  /* COPY ACTIONS */
+  .copy-section { padding: 16px 18px 18px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--green);
+    color: var(--bg);
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 1000;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* TERMINAL */
+  .terminal {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    overflow: hidden;
+    font-family: var(--mono);
+  }
+
+  .terminal-bar {
+    background: var(--bg3);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .terminal-body { padding: 16px 18px; font-size: 12px; line-height: 1.9; }
+
+  .t-prompt { color: var(--green); }
+  .t-cmd { color: var(--text); }
+  .t-result { color: var(--text2); }
+  .t-match { color: var(--red2); font-weight: 700; }
+  .t-file { color: var(--accent); }
+  .t-lnum { color: var(--yellow2); }
+  .t-sep { color: var(--text3); }
+  .t-comment { color: var(--text3); font-style: italic; }
+  .t-line { display: block; margin-bottom: 2px; }
+
+  /* PRESETS GRID */
+  .presets-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+
+  .preset-btn {
+    padding: 10px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text2);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-align: left;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .preset-btn:hover { border-color: var(--border-bright); color: var(--text); background: var(--bg4); transform: translateY(-1px); }
+  .preset-btn .preset-icon { font-size: 14px; }
+
+  /* LEARN SECTIONS */
+  .learn-section { margin-bottom: 8px; }
+
+  .learn-header {
+    padding: 14px 18px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    transition: all 0.15s;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .learn-header:hover { border-color: var(--border-bright); color: var(--text); }
+  .learn-header.open { border-radius: var(--radius) var(--radius) 0 0; border-color: var(--accent); color: var(--accent); }
+
+  .learn-header .chevron { transition: transform 0.2s; font-size: 12px; }
+  .learn-header.open .chevron { transform: rotate(180deg); }
+
+  .learn-body {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 18px;
+    display: none;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.8;
+  }
+
+  .learn-body.open { display: block; }
+
+  .learn-body h4 { color: var(--text); font-size: 13px; margin-bottom: 8px; margin-top: 14px; }
+  .learn-body h4:first-child { margin-top: 0; }
+  .learn-body p { margin-bottom: 10px; }
+
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin: 10px 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    overflow-x: auto;
+    line-height: 1.8;
+  }
+
+  .code-line { display: block; color: var(--text); }
+  .code-comment { color: var(--text3); }
+  .code-cmd { color: var(--accent); }
+  .code-flag { color: var(--yellow2); }
+  .code-str { color: var(--green2); }
+  .code-path { color: var(--orange); }
+
+  /* FLAG TABLE */
+  .flag-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .flag-table th { text-align: left; padding: 8px 12px; background: var(--bg3); color: var(--text3); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  .flag-table td { padding: 10px 12px; border-bottom: 1px solid rgba(48,54,61,0.5); vertical-align: top; }
+  .flag-table tr:last-child td { border-bottom: none; }
+  .flag-table tr:hover td { background: rgba(22,27,34,0.5); }
+  .flag-table .f-flag { color: var(--yellow2); font-weight: 600; white-space: nowrap; }
+  .flag-table .f-long { color: var(--accent); white-space: nowrap; }
+  .flag-table .f-desc { color: var(--text2); }
+  .flag-table .f-ex { color: var(--green2); font-size: 11px; }
+
+  /* HISTORY */
+  .history-item {
+    padding: 10px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    transition: border-color 0.15s;
+  }
+
+  .history-item:hover { border-color: var(--border-bright); }
+
+  .history-cmd { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .history-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+  /* REGEX PLAYGROUND */
+  .regex-item { margin-bottom: 14px; }
+  .regex-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .regex-pattern {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .regex-val { color: var(--purple); flex: 1; word-break: break-all; }
+  .regex-example { font-size: 11px; color: var(--text3); font-style: italic; }
+
+  /* VISUALIZER */
+  .viz-tree { font-family: var(--mono); font-size: 12px; line-height: 2; }
+  .viz-dir { color: var(--accent); }
+  .viz-file { color: var(--text2); }
+  .viz-match { color: var(--green2); font-weight: 600; }
+  .viz-line-ref { color: var(--yellow2); }
+  .viz-indent { color: var(--text3); }
+
+  /* PERFORMANCE COMPARE */
+  .perf-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .perf-row:last-child { border-bottom: none; }
+  .perf-tool { color: var(--text); font-weight: 600; width: 60px; flex-shrink: 0; }
+  .perf-bar-wrap { flex: 1; background: var(--bg3); border-radius: 4px; overflow: hidden; height: 8px; }
+  .perf-bar { height: 100%; border-radius: 4px; }
+  .perf-num { width: 60px; text-align: right; font-size: 11px; color: var(--text3); flex-shrink: 0; }
+
+  /* SEARCH VISUALIZER */
+  .viz-node {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    transition: all 0.2s;
+    animation: fadeSlideIn 0.3s ease both;
+  }
+
+  .viz-node.highlight { border-color: var(--green); background: rgba(63,185,80,0.08); }
+  .viz-node.searching { border-color: var(--yellow); background: rgba(227,179,65,0.05); }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .viz-children { margin-left: 28px; border-left: 1px dashed var(--border); padding-left: 12px; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  /* BADGE */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .badge-blue { background: rgba(88,166,255,0.15); color: var(--accent); border: 1px solid rgba(88,166,255,0.3); }
+  .badge-green { background: rgba(63,185,80,0.15); color: var(--green2); border: 1px solid rgba(63,185,80,0.3); }
+  .badge-yellow { background: rgba(227,179,65,0.15); color: var(--yellow2); border: 1px solid rgba(227,179,65,0.3); }
+  .badge-red { background: rgba(248,81,73,0.15); color: var(--red2); border: 1px solid rgba(248,81,73,0.3); }
+  .badge-purple { background: rgba(188,140,255,0.15); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); }
+
+  /* SECTION HEADINGS */
+  .section-heading {
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-heading::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* MOBILE */
+  @media (max-width: 600px) {
+    .header { flex-direction: column; align-items: flex-start; }
+    .cmd-display { font-size: 12px; }
+    .flag-chip { font-size: 10px; }
+  }
+
+  /* ANIMATIONS */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .pulsing { animation: pulse 1.5s ease-in-out infinite; }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide-up { animation: slide-up 0.3s ease both; }
+
+  /* HIGHLIGHT */
+  mark {
+    background: rgba(227,179,65,0.25);
+    color: var(--yellow2);
+    border-radius: 2px;
+    padding: 0 2px;
+  }
+
+  /* VALIDATION */
+  .invalid { border-color: var(--red) !important; }
+  .valid { border-color: var(--green) !important; }
+  .validation-msg { font-size: 11px; margin-top: 4px; }
+  .validation-msg.error { color: var(--red2); }
+  .validation-msg.ok { color: var(--green2); }
+
+  /* FAVORITES STAR */
+  .star-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text3);
+    transition: color 0.2s, transform 0.2s;
+    padding: 2px;
+    line-height: 1;
+  }
+  .star-btn:hover { color: var(--yellow2); transform: scale(1.2); }
+  .star-btn.starred { color: var(--yellow2); }
+
+  /* FLEX UTILS */
+  .flex { display: flex; }
+  .flex-col { flex-direction: column; }
+  .items-center { align-items: center; }
+  .justify-between { justify-content: space-between; }
+  .gap-2 { gap: 8px; }
+  .gap-3 { gap: 12px; }
+  .flex-wrap { flex-wrap: wrap; }
+  .flex-1 { flex: 1; }
+  .mt-3 { margin-top: 12px; }
+  .mb-3 { margin-bottom: 12px; }
+
+  /* GLOW TEXT */
+  .glow-text { text-shadow: 0 0 20px currentColor; }
+
+  /* KEYBOARD SHORTCUT */
+  kbd {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    background: var(--bg4);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text2);
+  }
+
+  /* PIPELINE VISUAL */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--bg);
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin: 8px 0;
+  }
+  .pipe-cmd { color: var(--accent); font-weight: 600; }
+  .pipe-sep { color: var(--text3); padding: 0 4px; }
+  .pipe-arg { color: var(--orange); }
+  .pipe-flag { color: var(--yellow2); }
+  .pipe-str { color: var(--green2); }
+
+  /* PRO MODE TABLE */
+  .flag-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius2); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+    font-size: 13px;
+  }
+
+  /* TAB BADGE */
+  .tab-badge {
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 10px;
+    font-weight: 700;
+    margin-left: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-wrapper">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">⌕</div>
+      <div>
+        <div class="logo-text">Grep Command Studio</div>
+        <div class="logo-sub">Linux Text Search Mastery</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-ghost btn-sm" onclick="exportCommands()">⬇ Export</button>
+      <button class="btn btn-ghost btn-sm" onclick="showShortcuts()">⌨ Shortcuts</button>
+      <button class="btn btn-ghost btn-sm" id="themeToggle" onclick="toggleTheme()">☀ Light</button>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" onclick="switchTab('builder')" role="tab">⚡ Builder</button>
+    <button class="tab-btn" onclick="switchTab('learn')" role="tab">📚 Learn</button>
+    <button class="tab-btn" onclick="switchTab('regex')" role="tab">🔬 Regex Lab</button>
+    <button class="tab-btn" onclick="switchTab('find')" role="tab">🔗 Find+Grep</button>
+    <button class="tab-btn" onclick="switchTab('devops')" role="tab">🚀 DevOps</button>
+    <button class="tab-btn" onclick="switchTab('perf')" role="tab">⚡ Performance</button>
+    <button class="tab-btn" onclick="switchTab('history')" role="tab">🕑 History <span class="tab-badge" id="historyBadge">0</span></button>
+    <button class="tab-btn" onclick="switchTab('cheatsheet')" role="tab">📄 Cheat Sheet</button>
+  </nav>
+
+  <!-- ===== TAB: BUILDER ===== -->
+  <div class="tab-panel active" id="tab-builder">
+    <div class="main-grid">
+
+      <!-- LEFT: FORM -->
+      <div>
+        <!-- QUICK PRESETS -->
+        <div class="card mb-3">
+          <div class="card-header">
+            <div class="card-title"><span class="dot"></span> Quick Presets</div>
+          </div>
+          <div class="card-body">
+            <div class="presets-grid">
+              <button class="preset-btn" onclick="applyPreset('logs')"><span class="preset-icon">📋</span>Search Logs</button>
+              <button class="preset-btn" onclick="applyPreset('errors')"><span class="preset-icon">❌</span>Find Errors</button>
+              <button class="preset-btn" onclick="applyPreset('js')"><span class="preset-icon">🟨</span>JS Files</button>
+              <button class="preset-btn" onclick="applyPreset('nonode')"><span class="preset-icon">🚫</span>Exclude node_modules</button>
+              <button class="preset-btn" onclick="applyPreset('ip')"><span class="preset-icon">🌐</span>Find IP Addresses</button>
+              <button class="preset-btn" onclick="applyPreset('exact')"><span class="preset-icon">🎯</span>Exact Word</button>
+              <button class="preset-btn" onclick="applyPreset('recursive')"><span class="preset-icon">🔄</span>Recursive Search</button>
+              <button class="preset-btn" onclick="applyPreset('git')"><span class="preset-icon">🔀</span>Search Git Repos</button>
+              <button class="preset-btn" onclick="applyPreset('docker')"><span class="preset-icon">🐳</span>Docker Logs</button>
+              <button class="preset-btn" onclick="applyPreset('uuid')"><span class="preset-icon">🆔</span>Find UUIDs</button>
+              <button class="preset-btn" onclick="applyPreset('email')"><span class="preset-icon">📧</span>Find Emails</button>
+              <button class="preset-btn" onclick="applyPreset('http')"><span class="preset-icon">🌍</span>HTTP Errors</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN INPUT -->
+        <div class="card mb-3">
+          <div class="card-header">
+            <div class="card-title"><span class="dot" style="background:var(--green)"></span> Search Parameters</div>
+            <button class="btn btn-ghost btn-xs" onclick="resetForm()">↺ Reset</button>
+          </div>
+          <div class="card-body">
+            <div class="grid-2">
+              <div class="field">
+                <label>Search Pattern / Term</label>
+                <input type="text" id="pattern" placeholder="ERROR|warning|exception" oninput="buildCommand()" />
+                <div id="regexValidation" class="validation-msg"></div>
+              </div>
+              <div class="field">
+                <label>Search Path / Directory</label>
+                <input type="text" id="path" placeholder=". or /var/log or ~/project" oninput="buildCommand()" value="." />
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label>File Extension (e.g. txt, js, log)</label>
+                <input type="text" id="extension" placeholder="log" oninput="buildCommand()" />
+              </div>
+              <div class="field">
+                <label>Multiple Extensions (comma separated)</label>
+                <input type="text" id="multiExt" placeholder="js,ts,jsx,tsx" oninput="buildCommand()" />
+              </div>
+            </div>
+            <div class="grid-2">
+              <div class="field">
+                <label>Exclude Directories</label>
+                <input type="text" id="excludeDirs" placeholder="node_modules,.git,dist" oninput="buildCommand()" />
+              </div>
+              <div class="field">
+                <label>Exclude Files (pattern)</label>
+                <input type="text" id="excludeFiles" placeholder="*.min.js,*.map" oninput="buildCommand()" />
+              </div>
+            </div>
+            <div class="grid-3">
+              <div class="field">
+                <label>Max Depth</label>
+                <input type="number" id="maxDepth" placeholder="(unlimited)" min="1" max="20" oninput="buildCommand()" />
+              </div>
+              <div class="field">
+                <label>Context Lines Before</label>
+                <input type="number" id="before" placeholder="0" min="0" max="50" oninput="buildCommand()" />
+              </div>
+              <div class="field">
+                <label>Context Lines After</label>
+                <input type="number" id="after" placeholder="0" min="0" max="50" oninput="buildCommand()" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TOGGLES -->
+        <div class="card mb-3">
+          <div class="card-header">
+            <div class="card-title"><span class="dot" style="background:var(--yellow2)"></span> Options & Flags</div>
+          </div>
+          <div class="card-body">
+            <div class="toggle-grid">
+              <div class="toggle-item" onclick="toggleOpt(this,'recursive')" data-opt="recursive">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-r Recursive</span>
+              </div>
+              <div class="toggle-item active" onclick="toggleOpt(this,'recursive')" data-opt="recursive" style="display:none"></div>
+              <div class="toggle-item" onclick="toggleOpt(this,'ignoreCase')" data-opt="ignoreCase">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-i Ignore Case</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'lineNumbers')" data-opt="lineNumbers">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-n Line Numbers</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'wholeWord')" data-opt="wholeWord">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-w Whole Word</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'invertMatch')" data-opt="invertMatch">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-v Invert Match</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'extendedRegex')" data-opt="extendedRegex">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-E Extended Regex</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'perlRegex')" data-opt="perlRegex">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-P Perl Regex</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'fixedString')" data-opt="fixedString">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-F Fixed String</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'countOnly')" data-opt="countOnly">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-c Count Only</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'filenameOnly')" data-opt="filenameOnly">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-l Filenames Only</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'noFilename')" data-opt="noFilename">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-h No Filename</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'matchOnly')" data-opt="matchOnly">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-o Match Only</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'colorOutput')" data-opt="colorOutput">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">--color Output</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'followSymlinks')" data-opt="followSymlinks">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-L Symlinks</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'ignoreBinary')" data-opt="ignoreBinary">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">--no-binary</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'hiddenFiles')" data-opt="hiddenFiles">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">Hidden Files</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'noMessages')" data-opt="noMessages">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-s No Errors</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'quiet')" data-opt="quiet">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-q Quiet Mode</span>
+              </div>
+              <div class="toggle-item" onclick="toggleOpt(this,'nullTerminated')" data-opt="nullTerminated">
+                <div class="toggle-switch"></div>
+                <span class="toggle-label">-Z Null-Terminated</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TERMINAL SIM -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="dot" style="background:var(--green)"></span> Simulated Output</div>
+            <button class="btn btn-ghost btn-xs" onclick="refreshSimulation()">↻ Refresh</button>
+          </div>
+          <div class="card-body">
+            <div class="terminal">
+              <div class="terminal-bar">
+                <div class="cmd-dots">
+                  <div class="cmd-dot red"></div>
+                  <div class="cmd-dot yellow"></div>
+                  <div class="cmd-dot green"></div>
+                </div>
+                <span class="cmd-title">bash — terminal</span>
+              </div>
+              <div class="terminal-body" id="simOutput">
+                <span class="t-line"><span class="t-comment"># Enter a search pattern to see simulated output</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: COMMAND PREVIEW (sticky) -->
+      <div>
+        <div class="command-preview card">
+          <div class="cmd-bar">
+            <div class="cmd-dots">
+              <div class="cmd-dot red"></div>
+              <div class="cmd-dot yellow"></div>
+              <div class="cmd-dot green"></div>
+            </div>
+            <span class="cmd-title">~ live command preview</span>
+          </div>
+          <div class="cmd-display" id="cmdDisplay">
+            <span class="cmd-prompt">$</span> <span class="cmd-bin">grep</span> <span style="color:var(--text3)">...</span>
+          </div>
+          <div class="flags-section">
+            <div class="flags-title">Active Flags</div>
+            <div class="flag-chips" id="flagChips">
+              <span style="color:var(--text3); font-size:11px">No flags active</span>
+            </div>
+          </div>
+          <div class="copy-section">
+            <button class="btn btn-primary btn-lg flex-1" onclick="copyCommand()" id="copyBtn">
+              ⎘ Copy Command
+            </button>
+            <button class="star-btn" id="starBtn" onclick="toggleFavorite()" title="Save to favorites">☆</button>
+          </div>
+
+          <!-- EXPLANATION -->
+          <div style="padding: 0 18px 18px; border-top: 1px solid var(--border); margin-top: 0;">
+            <div style="padding-top:14px; font-size:10px; color:var(--text3); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px;">Command Breakdown</div>
+            <div id="explanation" style="font-size:12px; color:var(--text2); line-height:1.8;">
+              <em style="color:var(--text3)">Fill in the form to see explanation...</em>
+            </div>
+          </div>
+
+          <!-- SEARCH VISUALIZER -->
+          <div style="padding: 14px 18px 18px; border-top: 1px solid var(--border);">
+            <div style="font-size:10px; color:var(--text3); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px;">Search Visualizer</div>
+            <div id="vizOutput" class="viz-tree">
+              <span style="color:var(--text3); font-size:11px">...</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: LEARN ===== -->
+  <div class="tab-panel" id="tab-learn">
+    <div class="section-heading">📚 Grep Learning Center</div>
+
+    <!-- BEGINNER -->
+    <div class="learn-section">
+      <div class="learn-header" onclick="toggleLearn(this)">
+        <span>🟢 Beginner — What is grep and why use it?</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="learn-body">
+        <h4>What is grep?</h4>
+        <p><code>grep</code> stands for <strong>Global Regular Expression Print</strong>. It's a command-line tool that searches text using patterns. Think of it as <em>Ctrl+F on steroids</em> for your terminal.</p>
+        <p>It was originally written by Ken Thompson in 1974 and remains one of the most-used Unix tools today.</p>
+        <h4>Basic Syntax</h4>
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># grep [OPTIONS] PATTERN [FILE...]</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-str">"hello"</span> <span class="code-path">file.txt</span>     <span class="code-comment"># search in one file</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-str">"hello"</span> <span class="code-flag">*.txt</span>       <span class="code-comment"># search in all .txt files</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-r</span> <span class="code-str">"hello"</span> <span class="code-path">./src</span>    <span class="code-comment"># search recursively in directory</span></span>
+        </div>
+        <h4>Your First grep Commands</h4>
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># Find all lines containing "error" in syslog</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-str">"error"</span> <span class="code-path">/var/log/syslog</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Same but case-insensitive (-i)</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-i</span> <span class="code-str">"error"</span> <span class="code-path">/var/log/syslog</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Show line numbers too (-n)</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-n</span> <span class="code-str">"error"</span> <span class="code-path">app.log</span></span>
+        </div>
+        <h4>Common Beginner Mistakes</h4>
+        <p>❌ <code>grep error *.log</code> — won't search subdirectories. Use <code>-r</code> flag.</p>
+        <p>❌ <code>grep -r "error" .</code> — searches everything including binaries. Add <code>--binary-files=without-match</code>.</p>
+        <p>✅ Tip: Always quote your pattern to avoid shell interpretation issues.</p>
+      </div>
+    </div>
+
+    <!-- INTERMEDIATE -->
+    <div class="learn-section">
+      <div class="learn-header" onclick="toggleLearn(this)">
+        <span>🟡 Intermediate — Flags, patterns & pipelines</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="learn-body">
+        <h4>Essential Flags</h4>
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># -A, -B, -C: Context lines around matches</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-A 3</span> <span class="code-str">"ERROR"</span> <span class="code-path">app.log</span>   <span class="code-comment"># 3 lines AFTER match</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-B 2</span> <span class="code-str">"ERROR"</span> <span class="code-path">app.log</span>   <span class="code-comment"># 2 lines BEFORE match</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-C 3</span> <span class="code-str">"ERROR"</span> <span class="code-path">app.log</span>   <span class="code-comment"># 3 lines AROUND match</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># -l: Only print filenames that match</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-rl</span> <span class="code-str">"TODO"</span> <span class="code-path">./src</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># -c: Count matches per file</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-rc</span> <span class="code-str">"error"</span> <span class="code-path">/var/log</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># -v: Invert — show lines NOT matching</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-v</span> <span class="code-str">"^#"</span> <span class="code-path">nginx.conf</span>   <span class="code-comment"># strip comments</span></span>
+        </div>
+        <h4>Piping grep</h4>
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># Chain multiple grep filters</span></span>
+          <span class="code-line"><span class="code-cmd">cat</span> <span class="code-path">app.log</span> | <span class="code-cmd">grep</span> <span class="code-str">"ERROR"</span> | <span class="code-cmd">grep</span> <span class="code-flag">-v</span> <span class="code-str">"404"</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># grep + sort + uniq: Find most common errors</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-str">"ERROR"</span> <span class="code-path">app.log</span> | <span class="code-cmd">sort</span> | <span class="code-cmd">uniq</span> <span class="code-flag">-c</span> | <span class="code-cmd">sort</span> <span class="code-flag">-rn</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># grep + awk: Extract specific fields</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-str">"ERROR"</span> <span class="code-path">app.log</span> | <span class="code-cmd">awk</span> <span class="code-str">'{print $1, $2}'</span></span>
+        </div>
+        <h4>Multiple Patterns (OR)</h4>
+        <div class="code-block">
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-E</span> <span class="code-str">"ERROR|WARN|FATAL"</span> <span class="code-path">app.log</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-e</span> <span class="code-str">"ERROR"</span> <span class="code-flag">-e</span> <span class="code-str">"WARN"</span> <span class="code-path">app.log</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADVANCED -->
+    <div class="learn-section">
+      <div class="learn-header" onclick="toggleLearn(this)">
+        <span>🔴 Advanced — Regex mastery & performance</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="learn-body">
+        <h4>POSIX vs Extended vs Perl Regex</h4>
+        <p><strong>Basic Regex (BRE)</strong> — default grep. Use <code>\(</code> <code>\|</code> for groups/alternation.</p>
+        <p><strong>Extended Regex (ERE)</strong> — with <code>-E</code>. Use <code>(</code> <code>|</code> without escaping.</p>
+        <p><strong>Perl Regex (PCRE)</strong> — with <code>-P</code>. Full Perl features: lookahead, lookbehind, <code>\d</code>, <code>\w</code>, etc.</p>
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># Perl regex: match IP addresses</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-P</span> <span class="code-str">'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b'</span> <span class="code-path">access.log</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Lookahead: find "foo" only when followed by "bar"</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-P</span> <span class="code-str">'foo(?=bar)'</span> <span class="code-path">file.txt</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Named groups, non-greedy</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-Po</span> <span class="code-str">'(?&lt;=user=)\w+'</span> <span class="code-path">auth.log</span>   <span class="code-comment"># extract usernames</span></span>
+        </div>
+        <h4>Performance Tips</h4>
+        <p>🚀 Use <code>-l</code> to find files first, then search within them.</p>
+        <p>🚀 Use <code>--include</code> to limit file types and avoid searching irrelevant files.</p>
+        <p>🚀 Use <code>-F</code> for fixed strings — much faster than regex.</p>
+        <p>🚀 Prefer <code>ripgrep (rg)</code> for large codebases — it's 5-10x faster than grep.</p>
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># Fast: use fixed string for literal searches</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-rF</span> <span class="code-str">"console.log"</span> <span class="code-path">./src</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Limit search scope</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-r</span> <span class="code-flag">--include="*.js"</span> <span class="code-flag">--exclude-dir={node_modules,.git}</span> <span class="code-str">"TODO"</span> <span class="code-path">.</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- KUBERNETES -->
+    <div class="learn-section">
+      <div class="learn-header" onclick="toggleLearn(this)">
+        <span>☸️ Kubernetes Log Searching</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="learn-body">
+        <h4>kubectl + grep</h4>
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># Search all pod logs for errors</span></span>
+          <span class="code-line"><span class="code-cmd">kubectl</span> logs <span class="code-flag">--all-namespaces</span> <span class="code-flag">-l</span> app=myapp | <span class="code-cmd">grep</span> <span class="code-flag">-i</span> <span class="code-str">"error"</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Follow logs + grep in real time</span></span>
+          <span class="code-line"><span class="code-cmd">kubectl</span> logs <span class="code-flag">-f</span> pod/my-pod | <span class="code-cmd">grep</span> <span class="code-flag">--line-buffered</span> <span class="code-str">"WARN\|ERROR"</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Find pods in CrashLoopBackOff</span></span>
+          <span class="code-line"><span class="code-cmd">kubectl</span> get pods <span class="code-flag">-A</span> | <span class="code-cmd">grep</span> <span class="code-str">"CrashLoop"</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Get events containing errors</span></span>
+          <span class="code-line"><span class="code-cmd">kubectl</span> get events <span class="code-flag">--sort-by='.lastTimestamp'</span> | <span class="code-cmd">grep</span> <span class="code-str">"Error\|Warning"</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Search across all configmaps for a value</span></span>
+          <span class="code-line"><span class="code-cmd">kubectl</span> get cm <span class="code-flag">-A</span> <span class="code-flag">-o yaml</span> | <span class="code-cmd">grep</span> <span class="code-str">"database_url"</span></span>
+        </div>
+        <h4>Stern (multi-pod log tailing)</h4>
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># stern: tail logs from multiple pods</span></span>
+          <span class="code-line">stern <span class="code-path">my-app</span> <span class="code-flag">--since</span> 1h | <span class="code-cmd">grep</span> <span class="code-str">"Exception"</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCKER -->
+    <div class="learn-section">
+      <div class="learn-header" onclick="toggleLearn(this)">
+        <span>🐳 Docker Log Searching</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="learn-body">
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># Search running container logs</span></span>
+          <span class="code-line"><span class="code-cmd">docker</span> logs my-container <span class="code-flag">2&gt;&amp;1</span> | <span class="code-cmd">grep</span> <span class="code-str">"ERROR"</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Follow + grep (real-time)</span></span>
+          <span class="code-line"><span class="code-cmd">docker</span> logs <span class="code-flag">-f</span> my-container <span class="code-flag">2&gt;&amp;1</span> | <span class="code-cmd">grep</span> <span class="code-flag">--line-buffered</span> <span class="code-str">"WARN"</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Search all containers at once</span></span>
+          <span class="code-line">for c in $(<span class="code-cmd">docker</span> ps <span class="code-flag">-q</span>); do <span class="code-cmd">docker</span> logs $c <span class="code-flag">2&gt;&amp;1</span> | <span class="code-cmd">grep</span> <span class="code-str">"OOM"</span>; done</span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Docker compose logs</span></span>
+          <span class="code-line"><span class="code-cmd">docker-compose</span> logs | <span class="code-cmd">grep</span> <span class="code-flag">-E</span> <span class="code-str">"error|exception|fatal"</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- NODE/REACT DEBUG -->
+    <div class="learn-section">
+      <div class="learn-header" onclick="toggleLearn(this)">
+        <span>⚡ Node.js / React Debugging</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="learn-body">
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># Find all console.log in source</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-rn</span> <span class="code-str">"console\.\(log\|error\|warn\)"</span> <span class="code-path">./src</span> <span class="code-flag">--include="*.js"</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Find TODO/FIXME/HACK comments</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-rnE</span> <span class="code-str">"TODO|FIXME|HACK|XXX"</span> <span class="code-path">./src</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Find all imports of a module</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-rn</span> <span class="code-str">"from ['\"]axios['\"]"</span> <span class="code-path">./src</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Find all React hooks usage</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-rn</span> <span class="code-str">"use[A-Z][a-zA-Z]*("</span> <span class="code-path">./src</span> <span class="code-flag">--include="*.jsx"</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Find hardcoded API keys / secrets (security audit!)</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-rnE</span> <span class="code-str">"(api_key|secret|password|token)\s*=\s*['\"]"</span> <span class="code-path">.</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- GREP + AWK + SED -->
+    <div class="learn-section">
+      <div class="learn-header" onclick="toggleLearn(this)">
+        <span>🔧 Grep + Awk + Sed Pipelines</span>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="learn-body">
+        <h4>The Power Trio</h4>
+        <p><strong>grep</strong> = find lines | <strong>awk</strong> = process fields | <strong>sed</strong> = transform text</p>
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># Extract HTTP status codes from access.log</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-str">"GET\|POST"</span> <span class="code-path">access.log</span> | <span class="code-cmd">awk</span> <span class="code-str">'{print $9}'</span> | <span class="code-cmd">sort</span> | <span class="code-cmd">uniq</span> <span class="code-flag">-c</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Find errors and replace timestamps</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-str">"ERROR"</span> <span class="code-path">app.log</span> | <span class="code-cmd">sed</span> <span class="code-str">'s/[0-9-T:Z]*//g'</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Count unique IPs that got 404s</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-str">" 404 "</span> <span class="code-path">access.log</span> | <span class="code-cmd">awk</span> <span class="code-str">'{print $1}'</span> | <span class="code-cmd">sort</span> | <span class="code-cmd">uniq</span> <span class="code-flag">-c</span> | <span class="code-cmd">sort</span> <span class="code-flag">-rn</span> | <span class="code-cmd">head</span> <span class="code-flag">-20</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Extract JSON values</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-str">"userId"</span> <span class="code-path">app.log</span> | <span class="code-cmd">grep</span> <span class="code-flag">-o</span> <span class="code-str">'"userId":"[^"]*"'</span> | <span class="code-cmd">sed</span> <span class="code-str">'s/"userId":"//;s/"//'</span></span>
+        </div>
+        <h4>xargs Integration</h4>
+        <div class="code-block">
+          <span class="code-line"><span class="code-comment"># Find files, then grep inside them</span></span>
+          <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-rl</span> <span class="code-str">"old_function"</span> <span class="code-path">./src</span> | <span class="code-cmd">xargs</span> <span class="code-cmd">sed</span> <span class="code-flag">-i</span> <span class="code-str">'s/old_function/new_function/g'</span></span>
+          <span class="code-line"></span>
+          <span class="code-line"><span class="code-comment"># Search across git-tracked files only</span></span>
+          <span class="code-line"><span class="code-cmd">git</span> ls-files | <span class="code-cmd">xargs</span> <span class="code-cmd">grep</span> <span class="code-flag">-l</span> <span class="code-str">"deprecated"</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: REGEX LAB ===== -->
+  <div class="tab-panel" id="tab-regex">
+    <div class="grid-2">
+      <div>
+        <div class="section-heading">🔬 Regex Playground</div>
+        <div class="card mb-3">
+          <div class="card-header">
+            <div class="card-title"><span class="dot" style="background:var(--purple)"></span> Test Your Regex</div>
+          </div>
+          <div class="card-body">
+            <div class="field">
+              <label>Your Regex Pattern</label>
+              <input type="text" id="regexInput" placeholder="\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b" oninput="testRegex()" />
+              <div id="regexResult" class="validation-msg"></div>
+            </div>
+            <div class="field">
+              <label>Test String</label>
+              <textarea id="regexTestStr" rows="4" placeholder="Paste text to test against..." oninput="testRegex()" style="width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--mono);font-size:12px;padding:10px 12px;outline:none;resize:vertical;"></textarea>
+            </div>
+            <div id="regexMatches" style="font-size:12px; color:var(--text2); margin-top:8px;"></div>
+            <div class="mt-3">
+              <label>Generated grep Command</label>
+              <div class="code-block" id="regexGrepCmd" style="margin:0; color:var(--accent);">grep -P "..." file</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-heading">📌 Common Patterns</div>
+        <div class="card">
+          <div class="card-body">
+            <div id="regexPatterns"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGEX VISUAL EXPLANATION -->
+    <div class="section-heading mt-3">🧠 Regex Concepts Visualized</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--yellow2)"></span> Anchors & Boundaries</div></div>
+        <div class="card-body">
+          <table class="flag-table">
+            <tr><th>Symbol</th><th>Meaning</th><th>Example</th></tr>
+            <tr><td class="f-flag">^</td><td class="f-desc">Start of line</td><td class="f-ex">^ERROR → lines starting with ERROR</td></tr>
+            <tr><td class="f-flag">$</td><td class="f-desc">End of line</td><td class="f-ex">\.log$ → ends with .log</td></tr>
+            <tr><td class="f-flag">\b</td><td class="f-desc">Word boundary</td><td class="f-ex">\berror\b → exact word</td></tr>
+            <tr><td class="f-flag">\B</td><td class="f-desc">Non-word boundary</td><td class="f-ex">\Berror → inside a word</td></tr>
+            <tr><td class="f-flag">.</td><td class="f-desc">Any character</td><td class="f-ex">er..r → er??r</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--green2)"></span> Quantifiers</div></div>
+        <div class="card-body">
+          <table class="flag-table">
+            <tr><th>Symbol</th><th>Meaning</th><th>Example</th></tr>
+            <tr><td class="f-flag">*</td><td class="f-desc">0 or more</td><td class="f-ex">ab* → a, ab, abb...</td></tr>
+            <tr><td class="f-flag">+</td><td class="f-desc">1 or more (-E)</td><td class="f-ex">ab+ → ab, abb...</td></tr>
+            <tr><td class="f-flag">?</td><td class="f-desc">0 or 1 (-E)</td><td class="f-ex">ab? → a or ab</td></tr>
+            <tr><td class="f-flag">{n,m}</td><td class="f-desc">n to m times</td><td class="f-ex">\d{1,3} → 1-3 digits</td></tr>
+            <tr><td class="f-flag">*?</td><td class="f-desc">Non-greedy (-P)</td><td class="f-ex">&lt;.*?&gt; → one tag</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--red2)"></span> Character Classes</div></div>
+        <div class="card-body">
+          <table class="flag-table">
+            <tr><th>Symbol</th><th>Meaning</th><th>Example</th></tr>
+            <tr><td class="f-flag">[abc]</td><td class="f-desc">a, b, or c</td><td class="f-ex">[aeiou] → vowels</td></tr>
+            <tr><td class="f-flag">[^abc]</td><td class="f-desc">Not a, b, or c</td><td class="f-ex">[^0-9] → non-digit</td></tr>
+            <tr><td class="f-flag">\d</td><td class="f-desc">Digit (-P)</td><td class="f-ex">\d+ → 1234</td></tr>
+            <tr><td class="f-flag">\w</td><td class="f-desc">Word char (-P)</td><td class="f-ex">\w+ → word</td></tr>
+            <tr><td class="f-flag">\s</td><td class="f-desc">Whitespace (-P)</td><td class="f-ex">\s+ → spaces</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--teal)"></span> Groups & Alternation</div></div>
+        <div class="card-body">
+          <table class="flag-table">
+            <tr><th>Symbol</th><th>Meaning</th><th>Example</th></tr>
+            <tr><td class="f-flag">(ab)</td><td class="f-desc">Capture group (-E)</td><td class="f-ex">(foo|bar)</td></tr>
+            <tr><td class="f-flag">(?:ab)</td><td class="f-desc">Non-capture group (-P)</td><td class="f-ex">(?:foo|bar)</td></tr>
+            <tr><td class="f-flag">a|b</td><td class="f-desc">Alternation</td><td class="f-ex">cat|dog</td></tr>
+            <tr><td class="f-flag">(?=ab)</td><td class="f-desc">Lookahead (-P)</td><td class="f-ex">foo(?=bar)</td></tr>
+            <tr><td class="f-flag">(?&lt;=ab)</td><td class="f-desc">Lookbehind (-P)</td><td class="f-ex">(?&lt;=foo)bar</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: FIND + GREP ===== -->
+  <div class="tab-panel" id="tab-find">
+    <div class="section-heading">🔗 Find + Grep Combinations</div>
+    <div class="grid-2">
+      <div class="card mb-3">
+        <div class="card-header">
+          <div class="card-title"><span class="dot" style="background:var(--orange)"></span> Build find + grep Pipeline</div>
+        </div>
+        <div class="card-body">
+          <div class="field">
+            <label>Find in Directory</label>
+            <input type="text" id="findPath" placeholder="/var/log" value="." oninput="buildFindGrep()" />
+          </div>
+          <div class="grid-2">
+            <div class="field">
+              <label>File Name Pattern</label>
+              <input type="text" id="findName" placeholder="*.log" oninput="buildFindGrep()" />
+            </div>
+            <div class="field">
+              <label>File Type</label>
+              <select id="findType" onchange="buildFindGrep()">
+                <option value="f">f — regular file</option>
+                <option value="d">d — directory</option>
+                <option value="l">l — symlink</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Modified (days ago, e.g. -1 = last day)</label>
+            <input type="text" id="findMtime" placeholder="-1" oninput="buildFindGrep()" />
+          </div>
+          <div class="field">
+            <label>grep Pattern</label>
+            <input type="text" id="findGrepPattern" placeholder="ERROR" oninput="buildFindGrep()" />
+          </div>
+          <div class="mt-3">
+            <div class="code-block" id="findGrepCmd" style="font-size:13px; color:var(--accent);">find . -type f | xargs grep ...</div>
+          </div>
+          <div class="mt-3" style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" onclick="copyFindCmd()">⎘ Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card mb-3">
+          <div class="card-header"><div class="card-title"><span class="dot"></span> xargs Explained</div></div>
+          <div class="card-body" style="font-size:12px; color:var(--text2); line-height:1.9;">
+            <p><code style="color:var(--accent)">xargs</code> converts stdin into command arguments. It bridges <code>find</code> (which outputs filenames) and <code>grep</code> (which takes filenames as args).</p>
+            <div class="code-block">
+              <span class="code-line"><span class="code-comment"># Without xargs (pipe): grep reads stdin as content</span></span>
+              <span class="code-line"><span class="code-cmd">find</span> . <span class="code-flag">-name</span> <span class="code-str">"*.log"</span> | <span class="code-cmd">grep</span> <span class="code-str">"ERROR"</span>  <span class="code-comment"># WRONG — greps filenames!</span></span>
+              <span class="code-line"></span>
+              <span class="code-line"><span class="code-comment"># With xargs: grep opens each file</span></span>
+              <span class="code-line"><span class="code-cmd">find</span> . <span class="code-flag">-name</span> <span class="code-str">"*.log"</span> | <span class="code-cmd">xargs</span> <span class="code-cmd">grep</span> <span class="code-str">"ERROR"</span>  <span class="code-comment"># RIGHT</span></span>
+              <span class="code-line"></span>
+              <span class="code-line"><span class="code-comment"># Handle spaces in filenames safely</span></span>
+              <span class="code-line"><span class="code-cmd">find</span> . <span class="code-flag">-name</span> <span class="code-str">"*.log"</span> <span class="code-flag">-print0</span> | <span class="code-cmd">xargs</span> <span class="code-flag">-0</span> <span class="code-cmd">grep</span> <span class="code-str">"ERROR"</span></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--purple)"></span> Powerful find Recipes</div></div>
+          <div class="card-body">
+            <div id="findRecipes"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: DEVOPS ===== -->
+  <div class="tab-panel" id="tab-devops">
+    <div class="section-heading">🚀 Real-World DevOps Searches</div>
+    <div id="devopsContent"></div>
+  </div>
+
+  <!-- ===== TAB: PERFORMANCE ===== -->
+  <div class="tab-panel" id="tab-perf">
+    <div class="section-heading">⚡ grep vs rg vs ag vs ack</div>
+    <div class="grid-2">
+      <div class="card mb-3">
+        <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--yellow2)"></span> Performance Comparison</div></div>
+        <div class="card-body">
+          <p style="font-size:12px; color:var(--text2); margin-bottom:16px;">Searching 100MB codebase for a pattern (lower = faster)</p>
+          <div class="perf-row">
+            <span class="perf-tool" style="color:var(--cyan)">rg</span>
+            <div class="perf-bar-wrap"><div class="perf-bar" style="width:8%; background: var(--green);"></div></div>
+            <span class="perf-num">0.3s</span>
+          </div>
+          <div class="perf-row">
+            <span class="perf-tool" style="color:var(--accent)">ag</span>
+            <div class="perf-bar-wrap"><div class="perf-bar" style="width:20%; background: var(--accent);"></div></div>
+            <span class="perf-num">0.8s</span>
+          </div>
+          <div class="perf-row">
+            <span class="perf-tool" style="color:var(--purple)">ack</span>
+            <div class="perf-bar-wrap"><div class="perf-bar" style="width:40%; background: var(--purple);"></div></div>
+            <span class="perf-num">1.5s</span>
+          </div>
+          <div class="perf-row">
+            <span class="perf-tool" style="color:var(--orange)">grep</span>
+            <div class="perf-bar-wrap"><div class="perf-bar" style="width:80%; background: var(--orange);"></div></div>
+            <span class="perf-num">3.1s</span>
+          </div>
+          <div class="perf-row">
+            <span class="perf-tool" style="color:var(--red2)">grep -r</span>
+            <div class="perf-bar-wrap"><div class="perf-bar" style="width:100%; background: var(--red2);"></div></div>
+            <span class="perf-num">4.0s</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card mb-3">
+          <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--cyan)"></span> ripgrep (rg) — Why it's Faster</div></div>
+          <div class="card-body" style="font-size:12px; color:var(--text2); line-height:1.8;">
+            <p>🦀 Written in <strong>Rust</strong> with SIMD optimizations</p>
+            <p>📝 Respects <code>.gitignore</code> automatically</p>
+            <p>🔢 Uses multiple threads by default</p>
+            <p>📦 Skips binary files intelligently</p>
+            <p>📁 Uses mmap for large files</p>
+            <div class="code-block">
+              <span class="code-line"><span class="code-comment"># Install</span></span>
+              <span class="code-line"><span class="code-cmd">brew</span> install ripgrep          <span class="code-comment"># macOS</span></span>
+              <span class="code-line"><span class="code-cmd">apt</span> install ripgrep           <span class="code-comment"># Debian/Ubuntu</span></span>
+              <span class="code-line"></span>
+              <span class="code-line"><span class="code-comment"># rg mirrors grep flags mostly</span></span>
+              <span class="code-line">rg <span class="code-str">"ERROR"</span>                     <span class="code-comment"># recursive by default!</span></span>
+              <span class="code-line">rg <span class="code-flag">-i</span> <span class="code-str">"error"</span> <span class="code-path">./logs</span></span>
+              <span class="code-line">rg <span class="code-flag">-t</span> js <span class="code-str">"useState"</span>          <span class="code-comment"># type filter</span></span>
+              <span class="code-line">rg <span class="code-flag">-g</span> <span class="code-str">"!*.min.js"</span> <span class="code-str">"foo"</span>    <span class="code-comment"># glob exclude</span></span>
+              <span class="code-line">rg <span class="code-flag">--stats</span> <span class="code-str">"TODO"</span>           <span class="code-comment"># show search stats</span></span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title"><span class="dot" style="background:var(--accent)"></span> Silver Searcher (ag)</div></div>
+          <div class="card-body" style="font-size:12px; color:var(--text2); line-height:1.8;">
+            <div class="code-block">
+              <span class="code-line"><span class="code-cmd">brew</span> install the_silver_searcher</span>
+              <span class="code-line">ag <span class="code-str">"TODO"</span> <span class="code-path">./src</span></span>
+              <span class="code-line">ag <span class="code-flag">-l</span> <span class="code-str">"deprecated"</span></span>
+              <span class="code-line">ag <span class="code-flag">--js</span> <span class="code-str">"require\("</span>        <span class="code-comment"># JS files only</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GREP TUNING TIPS -->
+    <div class="section-heading">🔧 grep Performance Tuning</div>
+    <div class="card">
+      <div class="card-body">
+        <div class="grid-2">
+          <div>
+            <h4 style="color:var(--green2); font-size:13px; margin-bottom:10px;">✅ DO — Faster</h4>
+            <div class="code-block">
+              <span class="code-line"><span class="code-comment"># Fixed strings are 3-5x faster</span></span>
+              <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-F</span> <span class="code-str">"literal text"</span> <span class="code-path">file</span></span>
+              <span class="code-line"></span>
+              <span class="code-line"><span class="code-comment"># Limit file scope with --include</span></span>
+              <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-r --include="*.js"</span> <span class="code-str">"fn"</span></span>
+              <span class="code-line"></span>
+              <span class="code-line"><span class="code-comment"># Use -l to just list files</span></span>
+              <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-rl</span> <span class="code-str">"pattern"</span> <span class="code-path">.</span></span>
+              <span class="code-line"></span>
+              <span class="code-line"><span class="code-comment"># Exclude irrelevant dirs</span></span>
+              <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-r --exclude-dir={.git,node_modules}</span></span>
+            </div>
+          </div>
+          <div>
+            <h4 style="color:var(--red2); font-size:13px; margin-bottom:10px;">❌ AVOID — Slower</h4>
+            <div class="code-block">
+              <span class="code-line"><span class="code-comment"># Overly broad recursive searches</span></span>
+              <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-r</span> <span class="code-str">"."</span> <span class="code-path">/</span>  <span class="code-comment"># searches everything!</span></span>
+              <span class="code-line"></span>
+              <span class="code-line"><span class="code-comment"># Complex regex when not needed</span></span>
+              <span class="code-line"><span class="code-cmd">grep</span> <span class="code-flag">-E</span> <span class="code-str">"(E|e)(R|r)(R|r)"</span>  <span class="code-comment"># just use -i</span></span>
+              <span class="code-line"></span>
+              <span class="code-line"><span class="code-comment"># Cat + grep antipattern</span></span>
+              <span class="code-line"><span class="code-cmd">cat</span> <span class="code-path">file</span> | <span class="code-cmd">grep</span> <span class="code-str">"x"</span>  <span class="code-comment"># use grep directly</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: HISTORY ===== -->
+  <div class="tab-panel" id="tab-history">
+    <div class="flex justify-between items-center mb-3" style="gap:10px; flex-wrap:wrap;">
+      <div class="section-heading" style="margin-bottom:0">🕑 Command History</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="exportCommands()">⬇ Export All</button>
+        <button class="btn btn-danger btn-sm" onclick="clearHistory()">🗑 Clear History</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:280px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Recent Commands</div>
+        <div id="historyList">
+          <div class="empty-state">No commands yet. Build one in the Builder tab!</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:280px;">
+        <div style="font-size:11px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">⭐ Favorites</div>
+        <div id="favoritesList">
+          <div class="empty-state">No favorites yet. Star a command to save it!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TAB: CHEAT SHEET ===== -->
+  <div class="tab-panel" id="tab-cheatsheet">
+    <div class="flex justify-between items-center mb-3" style="gap:10px;flex-wrap:wrap;">
+      <div class="section-heading" style="margin-bottom:0">📄 Interactive Cheat Sheet</div>
+      <button class="btn btn-ghost btn-sm" onclick="exportCheatsheet()">⬇ Export as Text</button>
+    </div>
+
+    <div class="flag-table-wrap mb-3">
+      <table class="flag-table" style="width:100%">
+        <thead>
+          <tr>
+            <th>Flag</th>
+            <th>Long Form</th>
+            <th>Description</th>
+            <th>Example</th>
+          </tr>
+        </thead>
+        <tbody id="cheatsheetTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- end app-wrapper -->
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ Copied to clipboard!</div>
+
+<!-- SHORTCUTS MODAL (hidden) -->
+<div id="shortcutsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:999;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius2);padding:24px;max-width:480px;width:90%;max-height:80vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="font-family:var(--sans);font-size:16px;font-weight:700;">⌨ Keyboard Shortcuts</h3>
+      <button onclick="document.getElementById('shortcutsModal').style.display='none'" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div style="display:grid;gap:8px;font-size:12px;">
+      <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg2);border-radius:var(--radius);"><span>Copy command</span><kbd>Ctrl/⌘ + C</kbd></div>
+      <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg2);border-radius:var(--radius);"><span>Focus pattern input</span><kbd>/</kbd></div>
+      <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg2);border-radius:var(--radius);"><span>Reset form</span><kbd>Ctrl + R</kbd></div>
+      <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg2);border-radius:var(--radius);"><span>Switch to Builder</span><kbd>1</kbd></div>
+      <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg2);border-radius:var(--radius);"><span>Switch to Learn</span><kbd>2</kbd></div>
+      <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg2);border-radius:var(--radius);"><span>Switch to Regex Lab</span><kbd>3</kbd></div>
+      <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg2);border-radius:var(--radius);"><span>Toggle favorite</span><kbd>Ctrl + S</kbd></div>
+      <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg2);border-radius:var(--radius);"><span>Export commands</span><kbd>Ctrl + E</kbd></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+const state = {
+  recursive: false, ignoreCase: false, lineNumbers: false, wholeWord: false,
+  invertMatch: false, extendedRegex: false, perlRegex: false, fixedString: false,
+  countOnly: false, filenameOnly: false, noFilename: false, matchOnly: false,
+  colorOutput: false, followSymlinks: false, ignoreBinary: false, hiddenFiles: false,
+  noMessages: false, quiet: false, nullTerminated: false
+};
+
+let commandHistory = JSON.parse(localStorage.getItem('grepHistory') || '[]');
+let favorites = JSON.parse(localStorage.getItem('grepFavorites') || '[]');
+let currentCommand = '';
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  buildCommand();
+  renderRegexPatterns();
+  renderCheatsheet();
+  renderDevops();
+  renderFindRecipes();
+  updateHistoryUI();
+  updateHistoryBadge();
+});
+
+// ===== TAB SWITCHING =====
+const tabs = ['builder','learn','regex','find','devops','perf','history','cheatsheet'];
+function switchTab(name) {
+  tabs.forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t === name);
+  });
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', tabs[i] === name);
+  });
+  if (name === 'history') updateHistoryUI();
+}
+
+// ===== TOGGLE OPTIONS =====
+function toggleOpt(el, opt) {
+  el.classList.toggle('active');
+  state[opt] = el.classList.contains('active');
+  buildCommand();
+}
+
+// ===== BUILD COMMAND =====
+function buildCommand() {
+  const pattern = document.getElementById('pattern').value.trim();
+  const path = document.getElementById('path').value.trim() || '.';
+  const ext = document.getElementById('extension').value.trim();
+  const multiExt = document.getElementById('multiExt').value.trim();
+  const excludeDirs = document.getElementById('excludeDirs').value.trim();
+  const excludeFiles = document.getElementById('excludeFiles').value.trim();
+  const maxDepth = document.getElementById('maxDepth').value.trim();
+  const before = document.getElementById('before').value.trim();
+  const after = document.getElementById('after').value.trim();
+
+  // Validate regex
+  validateRegexInput(pattern);
+
+  let flags = '';
+  let longFlags = [];
+  const activeFlags = [];
+
+  if (state.recursive) { flags += 'r'; activeFlags.push({f:'-r',desc:'Search subdirectories recursively',color:'blue'}); }
+  if (state.ignoreCase) { flags += 'i'; activeFlags.push({f:'-i',desc:'Case-insensitive matching',color:'green'}); }
+  if (state.lineNumbers) { flags += 'n'; activeFlags.push({f:'-n',desc:'Show line numbers',color:'yellow'}); }
+  if (state.wholeWord) { flags += 'w'; activeFlags.push({f:'-w',desc:'Match whole words only',color:'purple'}); }
+  if (state.invertMatch) { flags += 'v'; activeFlags.push({f:'-v',desc:'Show non-matching lines',color:'red'}); }
+  if (state.extendedRegex) { flags += 'E'; activeFlags.push({f:'-E',desc:'Extended regex (ERE)',color:'teal'}); }
+  if (state.perlRegex) { flags += 'P'; activeFlags.push({f:'-P',desc:'Perl-compatible regex (PCRE)',color:'purple'}); }
+  if (state.fixedString) { flags += 'F'; activeFlags.push({f:'-F',desc:'Fixed string, no regex',color:'yellow'}); }
+  if (state.countOnly) { flags += 'c'; activeFlags.push({f:'-c',desc:'Count matching lines',color:'blue'}); }
+  if (state.filenameOnly) { flags += 'l'; activeFlags.push({f:'-l',desc:'Print filenames only',color:'green'}); }
+  if (state.noFilename) { flags += 'h'; activeFlags.push({f:'-h',desc:'Suppress filename prefix',color:'teal'}); }
+  if (state.matchOnly) { flags += 'o'; activeFlags.push({f:'-o',desc:'Print only matched parts',color:'purple'}); }
+  if (state.followSymlinks) { flags += 'L'; activeFlags.push({f:'-L',desc:'Follow symbolic links',color:'teal'}); }
+  if (state.noMessages) { flags += 's'; activeFlags.push({f:'-s',desc:'Suppress error messages',color:'yellow'}); }
+  if (state.quiet) { flags += 'q'; activeFlags.push({f:'-q',desc:'Quiet: no output, just exit code',color:'red'}); }
+  if (state.nullTerminated) { flags += 'Z'; activeFlags.push({f:'-Z',desc:'Null-terminate output',color:'blue'}); }
+
+  if (state.colorOutput) { longFlags.push('--color=always'); activeFlags.push({f:'--color',desc:'Colorize output',color:'green'}); }
+  if (state.ignoreBinary) { longFlags.push('--binary-files=without-match'); activeFlags.push({f:'--no-binary',desc:'Skip binary files',color:'red'}); }
+
+  if (ext) {
+    longFlags.push(`--include="*.${ext}"`);
+    activeFlags.push({f:`--include=*.${ext}`,desc:`Only search .${ext} files`,color:'teal'});
+  }
+
+  if (multiExt) {
+    const exts = multiExt.split(',').map(e => e.trim()).filter(Boolean);
+    exts.forEach(e => {
+      longFlags.push(`--include="*.${e}"`);
+      activeFlags.push({f:`--include=*.${e}`,desc:`Include .${e} files`,color:'teal'});
+    });
+  }
+
+  if (excludeDirs) {
+    const dirs = excludeDirs.split(',').map(d => d.trim()).filter(Boolean);
+    if (dirs.length === 1) {
+      longFlags.push(`--exclude-dir=${dirs[0]}`);
+      activeFlags.push({f:`--exclude-dir=${dirs[0]}`,desc:`Exclude ${dirs[0]} directory`,color:'red'});
+    } else {
+      longFlags.push(`--exclude-dir={${dirs.join(',')}}`);
+      activeFlags.push({f:`--exclude-dir={...}`,desc:`Exclude directories: ${dirs.join(', ')}`,color:'red'});
+    }
+  }
+
+  if (excludeFiles) {
+    const files = excludeFiles.split(',').map(f => f.trim()).filter(Boolean);
+    files.forEach(f => {
+      longFlags.push(`--exclude="${f}"`);
+      activeFlags.push({f:`--exclude=${f}`,desc:`Exclude files matching ${f}`,color:'red'});
+    });
+  }
+
+  if (maxDepth) {
+    longFlags.push(`--max-depth=${maxDepth}`);
+    activeFlags.push({f:`--max-depth=${maxDepth}`,desc:`Search at most ${maxDepth} levels deep`,color:'yellow'});
+  }
+
+  if (before) {
+    longFlags.push(`-B ${before}`);
+    activeFlags.push({f:`-B ${before}`,desc:`Show ${before} lines before match`,color:'blue'});
+  }
+  if (after) {
+    longFlags.push(`-A ${after}`);
+    activeFlags.push({f:`-A ${after}`,desc:`Show ${after} lines after match`,color:'blue'});
+  }
+
+  // Assemble command
+  let cmd = 'grep';
+  if (flags) cmd += ' -' + flags;
+  longFlags.forEach(f => { cmd += ' ' + f; });
+  if (pattern) cmd += ` "${pattern}"`;
+  else cmd += ' "..."';
+  cmd += ` ${path}`;
+
+  currentCommand = (pattern ? cmd : '');
+
+  // Render display
+  renderCommandDisplay(flags, longFlags, pattern, path, activeFlags);
+  renderFlagChips(activeFlags);
+  renderExplanation(flags, longFlags, pattern, path, activeFlags);
+  renderSimulation(pattern, path, flags);
+  renderVisualizer(pattern, path, flags, ext);
+  updateStarBtn();
+}
+
+function renderCommandDisplay(flags, longFlags, pattern, path, activeFlags) {
+  const display = document.getElementById('cmdDisplay');
+  let html = `<span class="cmd-prompt">$</span> <span class="cmd-bin">grep</span>`;
+  if (flags) html += ` <span class="cmd-flag">-${flags}</span>`;
+  longFlags.forEach(f => { html += ` <span class="cmd-flag">${esc(f)}</span>`; });
+  if (pattern) html += ` <span class="cmd-pattern">"${esc(pattern)}"</span>`;
+  else html += ` <span style="color:var(--text3)">"..."</span>`;
+  html += ` <span class="cmd-path">${esc(path)}</span>`;
+  display.innerHTML = html;
+}
+
+function renderFlagChips(activeFlags) {
+  const container = document.getElementById('flagChips');
+  if (activeFlags.length === 0) {
+    container.innerHTML = '<span style="color:var(--text3); font-size:11px">No flags active</span>';
+    return;
+  }
+  container.innerHTML = activeFlags.map(f =>
+    `<span class="flag-chip ${f.color}" data-tooltip="${esc(f.desc)}">${esc(f.f)}</span>`
+  ).join('');
+}
+
+function renderExplanation(flags, longFlags, pattern, path, activeFlags) {
+  const el = document.getElementById('explanation');
+  if (!pattern && activeFlags.length === 0) {
+    el.innerHTML = '<em style="color:var(--text3)">Fill in the form to see explanation...</em>';
+    return;
+  }
+  let html = '';
+  if (pattern) html += `<div style="margin-bottom:8px"><span style="color:var(--text3)">pattern:</span> <span style="color:var(--red2)">"${esc(pattern)}"</span></div>`;
+  if (path) html += `<div style="margin-bottom:10px"><span style="color:var(--text3)">path:</span> <span style="color:var(--orange)">${esc(path)}</span></div>`;
+  activeFlags.forEach(f => {
+    html += `<div style="display:flex;gap:8px;margin-bottom:6px;align-items:flex-start">
+      <span class="flag-chip ${f.color}" style="flex-shrink:0">${esc(f.f)}</span>
+      <span style="color:var(--text2);font-size:11px;line-height:1.6">${esc(f.desc)}</span>
+    </div>`;
+  });
+  el.innerHTML = html || '<em style="color:var(--text3)">No flags active.</em>';
+}
+
+function renderSimulation(pattern, path, flags) {
+  const out = document.getElementById('simOutput');
+  if (!pattern) {
+    out.innerHTML = '<span class="t-line"><span class="t-comment"># Enter a search pattern to see simulated output</span></span>';
+    return;
+  }
+
+  const flagStr = flags ? `-${flags}` : '';
+  const hasN = flags.includes('n');
+  const hasC = flags.includes('c');
+  const hasL = flags.includes('l');
+  const hasV = flags.includes('v');
+
+  const files = ['app.log', 'server.log', 'debug.log'];
+  const lines = [
+    `[2024-01-15 09:23:11] INFO Starting application server`,
+    `[2024-01-15 09:23:12] ${pattern.toUpperCase()} Connection refused: ECONNREFUSED`,
+    `[2024-01-15 09:23:13] DEBUG Processing request from 192.168.1.45`,
+    `[2024-01-15 09:23:14] ${pattern} Handler triggered for route /api/v2/users`,
+    `[2024-01-15 09:23:15] WARN Slow query detected: 1450ms`,
+    `[2024-01-15 09:23:16] ${pattern.toUpperCase()} Failed to connect to database`,
+  ];
+
+  let html = `<span class="t-line"><span class="t-prompt">$</span> <span class="t-cmd">grep ${esc(flagStr)} "${esc(pattern)}" ${esc(path)}</span></span>`;
+
+  if (hasL) {
+    files.forEach((f, i) => {
+      if (i < 2) html += `<span class="t-line"><span class="t-file">${f}</span></span>`;
+    });
+  } else if (hasC) {
+    files.forEach(f => {
+      html += `<span class="t-line"><span class="t-file">${f}</span><span class="t-sep">:</span><span class="t-lnum">${Math.floor(Math.random()*5)+1}</span></span>`;
+    });
+  } else if (hasV) {
+    lines.filter(l => !l.toLowerCase().includes(pattern.toLowerCase())).forEach((line, i) => {
+      const lnum = hasN ? `<span class="t-lnum">${i+1}</span><span class="t-sep">:</span>` : '';
+      html += `<span class="t-line"><span class="t-file">app.log</span><span class="t-sep">:</span>${lnum}<span class="t-result">${esc(line)}</span></span>`;
+    });
+  } else {
+    const matchLines = lines.filter(l => l.toLowerCase().includes(pattern.toLowerCase()));
+    matchLines.forEach((line, i) => {
+      const lnum = hasN ? `<span class="t-lnum">${(i*3)+12}</span><span class="t-sep">:</span>` : '';
+      const highlighted = line.replace(new RegExp(pattern, 'gi'), m => `<span class="t-match">${esc(m)}</span>`);
+      html += `<span class="t-line"><span class="t-file">app.log</span><span class="t-sep">:</span>${lnum}<span class="t-result">${highlighted}</span></span>`;
+    });
+    if (matchLines.length === 0) {
+      html += `<span class="t-line"><span class="t-comment"># (no matches found)</span></span>`;
+    }
+  }
+  out.innerHTML = html;
+}
+
+function renderVisualizer(pattern, path, flags, ext) {
+  const viz = document.getElementById('vizOutput');
+  if (!pattern) { viz.innerHTML = '<span style="color:var(--text3); font-size:11px">...</span>'; return; }
+
+  const extStr = ext ? `.${ext}` : '.log';
+  viz.innerHTML = `
+    <div class="t-line"><span class="viz-dir">📁 ${esc(path)}/</span></div>
+    <div style="margin-left:16px; border-left: 1px dashed var(--border); padding-left:10px">
+      <div class="t-line"><span class="viz-dir">📁 logs/</span></div>
+      <div style="margin-left:14px; padding-left:8px; border-left:1px dashed var(--border)">
+        <div class="t-line"><span class="viz-file">📄 app${extStr}</span> → <span class="viz-match">3 matches</span></div>
+        <div class="t-line"><span class="viz-file">📄 server${extStr}</span> → <span class="viz-match">1 match</span></div>
+        <div class="t-line" style="color:var(--text3)">📄 debug${extStr} — <em>no match</em></div>
+      </div>
+      <div class="t-line"><span class="viz-dir">📁 src/</span></div>
+      <div style="margin-left:14px; padding-left:8px; border-left:1px dashed var(--border)">
+        <div class="t-line"><span class="viz-file">📄 index${extStr}</span> → <span class="viz-match">2 matches</span></div>
+      </div>
+    </div>
+    <div style="margin-top:8px; font-size:11px; color:var(--text3)">Pattern: <span style="color:var(--red2)">"${esc(pattern)}"</span></div>
+  `;
+}
+
+// ===== COPY =====
+function copyCommand() {
+  const cmd = getRawCommand();
+  if (!cmd) return;
+  navigator.clipboard.writeText(cmd).then(() => {
+    showToast('✓ Copied to clipboard!');
+    addToHistory(cmd);
+  });
+}
+
+function getRawCommand() {
+  const pattern = document.getElementById('pattern').value.trim();
+  const path = document.getElementById('path').value.trim() || '.';
+  const ext = document.getElementById('extension').value.trim();
+  const multiExt = document.getElementById('multiExt').value.trim();
+  const excludeDirs = document.getElementById('excludeDirs').value.trim();
+  const excludeFiles = document.getElementById('excludeFiles').value.trim();
+  const maxDepth = document.getElementById('maxDepth').value.trim();
+  const before = document.getElementById('before').value.trim();
+  const after = document.getElementById('after').value.trim();
+
+  let flags = '';
+  let longParts = [];
+
+  if (state.recursive) flags += 'r';
+  if (state.ignoreCase) flags += 'i';
+  if (state.lineNumbers) flags += 'n';
+  if (state.wholeWord) flags += 'w';
+  if (state.invertMatch) flags += 'v';
+  if (state.extendedRegex) flags += 'E';
+  if (state.perlRegex) flags += 'P';
+  if (state.fixedString) flags += 'F';
+  if (state.countOnly) flags += 'c';
+  if (state.filenameOnly) flags += 'l';
+  if (state.noFilename) flags += 'h';
+  if (state.matchOnly) flags += 'o';
+  if (state.followSymlinks) flags += 'L';
+  if (state.noMessages) flags += 's';
+  if (state.quiet) flags += 'q';
+  if (state.nullTerminated) flags += 'Z';
+
+  if (state.colorOutput) longParts.push('--color=always');
+  if (state.ignoreBinary) longParts.push('--binary-files=without-match');
+
+  if (ext) longParts.push(`--include="*.${ext}"`);
+  if (multiExt) multiExt.split(',').map(e=>e.trim()).filter(Boolean).forEach(e => longParts.push(`--include="*.${e}"`));
+  if (excludeDirs) {
+    const dirs = excludeDirs.split(',').map(d=>d.trim()).filter(Boolean);
+    if (dirs.length === 1) longParts.push(`--exclude-dir=${dirs[0]}`);
+    else longParts.push(`--exclude-dir={${dirs.join(',')}}`);
+  }
+  if (excludeFiles) excludeFiles.split(',').map(f=>f.trim()).filter(Boolean).forEach(f => longParts.push(`--exclude="${f}"`));
+  if (maxDepth) longParts.push(`--max-depth=${maxDepth}`);
+  if (before) longParts.push(`-B ${before}`);
+  if (after) longParts.push(`-A ${after}`);
+
+  let cmd = 'grep';
+  if (flags) cmd += ' -' + flags;
+  longParts.forEach(p => cmd += ' ' + p);
+  cmd += ` "${pattern || '...'}"`;
+  cmd += ` ${path}`;
+  return cmd;
+}
+
+// ===== HISTORY =====
+function addToHistory(cmd) {
+  if (!cmd || cmd.includes('...')) return;
+  commandHistory = commandHistory.filter(c => c !== cmd);
+  commandHistory.unshift(cmd);
+  if (commandHistory.length > 50) commandHistory.pop();
+  localStorage.setItem('grepHistory', JSON.stringify(commandHistory));
+  updateHistoryBadge();
+}
+
+function updateHistoryBadge() {
+  document.getElementById('historyBadge').textContent = commandHistory.length;
+}
+
+function updateHistoryUI() {
+  const histList = document.getElementById('historyList');
+  const favList = document.getElementById('favoritesList');
+
+  if (commandHistory.length === 0) {
+    histList.innerHTML = '<div class="empty-state">No commands yet. Build one in the Builder tab!</div>';
+  } else {
+    histList.innerHTML = commandHistory.map((cmd, i) => `
+      <div class="history-item">
+        <span class="history-cmd" title="${esc(cmd)}">${esc(cmd)}</span>
+        <div class="history-actions">
+          <button class="btn btn-ghost btn-xs" onclick="copyText('${esc(cmd).replace(/'/g,"\\'")}')">⎘</button>
+          <button class="btn btn-ghost btn-xs" onclick="loadCmd('${esc(cmd).replace(/'/g,"\\'")}')">↩</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  if (favorites.length === 0) {
+    favList.innerHTML = '<div class="empty-state">No favorites yet. Star a command to save it!</div>';
+  } else {
+    favList.innerHTML = favorites.map(cmd => `
+      <div class="history-item">
+        <span class="history-cmd" title="${esc(cmd)}">⭐ ${esc(cmd)}</span>
+        <div class="history-actions">
+          <button class="btn btn-ghost btn-xs" onclick="copyText('${esc(cmd).replace(/'/g,"\\'")}')">⎘</button>
+          <button class="btn btn-danger btn-xs" onclick="removeFav('${esc(cmd).replace(/'/g,"\\'")}')">×</button>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+function clearHistory() {
+  if (!confirm('Clear all command history?')) return;
+  commandHistory = [];
+  localStorage.setItem('grepHistory', '[]');
+  updateHistoryBadge();
+  updateHistoryUI();
+}
+
+// ===== FAVORITES =====
+function toggleFavorite() {
+  const cmd = getRawCommand();
+  if (!cmd || cmd.includes('...')) return;
+  const idx = favorites.indexOf(cmd);
+  if (idx === -1) {
+    favorites.unshift(cmd);
+    showToast('⭐ Saved to favorites!');
+  } else {
+    favorites.splice(idx, 1);
+    showToast('Removed from favorites');
+  }
+  localStorage.setItem('grepFavorites', JSON.stringify(favorites));
+  updateStarBtn();
+}
+
+function updateStarBtn() {
+  const cmd = getRawCommand();
+  const btn = document.getElementById('starBtn');
+  btn.classList.toggle('starred', favorites.includes(cmd));
+  btn.textContent = favorites.includes(cmd) ? '★' : '☆';
+}
+
+function removeFav(cmd) {
+  favorites = favorites.filter(c => c !== cmd);
+  localStorage.setItem('grepFavorites', JSON.stringify(favorites));
+  updateHistoryUI();
+}
+
+// ===== REGEX VALIDATION =====
+function validateRegexInput(pattern) {
+  const el = document.getElementById('regexValidation');
+  if (!pattern) { el.textContent = ''; el.className = 'validation-msg'; document.getElementById('pattern').className = ''; return; }
+  if (state.perlRegex || state.extendedRegex) {
+    try {
+      new RegExp(pattern);
+      el.textContent = '✓ Valid regex pattern';
+      el.className = 'validation-msg ok';
+      document.getElementById('pattern').classList.remove('invalid');
+    } catch(e) {
+      el.textContent = '✗ Invalid regex: ' + e.message;
+      el.className = 'validation-msg error';
+      document.getElementById('pattern').classList.add('invalid');
+    }
+  } else {
+    el.textContent = '';
+    el.className = 'validation-msg';
+  }
+}
+
+// ===== PRESETS =====
+const PRESETS = {
+  logs: { pattern: 'ERROR', path: '/var/log', extension: 'log', opts: ['recursive','ignoreCase','lineNumbers'] },
+  errors: { pattern: 'ERROR|WARN|FATAL|Exception', path: '.', extension: '', opts: ['recursive','lineNumbers','extendedRegex'] },
+  js: { pattern: 'TODO', path: './src', extension: 'js', opts: ['recursive','lineNumbers'] },
+  nonode: { pattern: 'require', path: '.', extension: '', excludeDirs: 'node_modules,.git,dist', opts: ['recursive','lineNumbers'] },
+  ip: { pattern: '\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b', path: '.', extension: '', opts: ['perlRegex','recursive','matchOnly'] },
+  exact: { pattern: 'handler', path: '.', extension: '', opts: ['recursive','lineNumbers','wholeWord','ignoreCase'] },
+  recursive: { pattern: 'console.log', path: './src', extension: '', opts: ['recursive','lineNumbers'] },
+  git: { pattern: 'merge conflict', path: '.', extension: '', opts: ['recursive','ignoreCase','lineNumbers'] },
+  docker: { pattern: 'ERROR|OOM|crash', path: '.', extension: 'log', opts: ['recursive','lineNumbers','extendedRegex'] },
+  uuid: { pattern: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', path: '.', extension: '', opts: ['perlRegex','recursive','matchOnly','ignoreCase'] },
+  email: { pattern: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', path: '.', extension: '', opts: ['perlRegex','recursive','matchOnly'] },
+  http: { pattern: 'HTTP/[0-9.]+ [45][0-9]{2}', path: '.', extension: 'log', opts: ['recursive','lineNumbers','extendedRegex'] },
+};
+
+function applyPreset(name) {
+  const p = PRESETS[name];
+  if (!p) return;
+
+  // Reset all states
+  Object.keys(state).forEach(k => state[k] = false);
+  document.querySelectorAll('.toggle-item').forEach(el => el.classList.remove('active'));
+
+  document.getElementById('pattern').value = p.pattern || '';
+  document.getElementById('path').value = p.path || '.';
+  document.getElementById('extension').value = p.extension || '';
+  document.getElementById('excludeDirs').value = p.excludeDirs || '';
+  document.getElementById('multiExt').value = '';
+  document.getElementById('excludeFiles').value = '';
+  document.getElementById('maxDepth').value = '';
+  document.getElementById('before').value = '';
+  document.getElementById('after').value = '';
+
+  p.opts.forEach(opt => {
+    state[opt] = true;
+    const el = document.querySelector(`.toggle-item[data-opt="${opt}"]`);
+    if (el) el.classList.add('active');
+  });
+
+  buildCommand();
+  showToast(`✓ Preset "${name}" applied!`);
+}
+
+// ===== FIND+GREP =====
+function buildFindGrep() {
+  const findPath = document.getElementById('findPath').value.trim() || '.';
+  const findName = document.getElementById('findName').value.trim() || '*.log';
+  const findType = document.getElementById('findType').value;
+  const findMtime = document.getElementById('findMtime').value.trim();
+  const grepPattern = document.getElementById('findGrepPattern').value.trim() || 'ERROR';
+
+  let cmd = `find ${findPath} -type ${findType}`;
+  if (findName) cmd += ` -name "${findName}"`;
+  if (findMtime) cmd += ` -mtime ${findMtime}`;
+  cmd += ` -print0 | xargs -0 grep -n "${grepPattern}"`;
+
+  document.getElementById('findGrepCmd').innerHTML =
+    `<span style="color:var(--accent)">find</span> <span style="color:var(--orange)">${esc(findPath)}</span> <span style="color:var(--yellow2)">-type ${findType}</span>${findName ? ` <span style="color:var(--yellow2)">-name</span> <span style="color:var(--green2)">"${esc(findName)}"</span>` : ''}${findMtime ? ` <span style="color:var(--yellow2)">-mtime ${findMtime}</span>` : ''} <span style="color:var(--yellow2)">-print0</span> | <span style="color:var(--accent)">xargs</span> <span style="color:var(--yellow2)">-0</span> <span style="color:var(--accent)">grep</span> <span style="color:var(--yellow2)">-n</span> <span style="color:var(--red2)">"${esc(grepPattern)}"</span>`;
+}
+
+function copyFindCmd() {
+  const el = document.getElementById('findGrepCmd');
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(() => showToast('✓ Copied!'));
+}
+
+// ===== REGEX PLAYGROUND =====
+const REGEX_PATTERNS = [
+  { name: 'IPv4 Address', pattern: '\\b\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\b', flag: '-P', example: '192.168.1.1' },
+  { name: 'Email Address', pattern: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', flag: '-E', example: 'user@example.com' },
+  { name: 'UUID', pattern: '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}', flag: '-E', example: '550e8400-e29b-41d4-a716-446655440000' },
+  { name: 'HTTP Status (4xx/5xx)', pattern: 'HTTP/[0-9.]+ [45][0-9]{2}', flag: '-E', example: 'HTTP/1.1 404 Not Found' },
+  { name: 'ISO Date', pattern: '[0-9]{4}-[0-9]{2}-[0-9]{2}', flag: '-E', example: '2024-01-15' },
+  { name: 'Timestamp', pattern: '[0-9]{2}:[0-9]{2}:[0-9]{2}', flag: '-E', example: '09:23:11' },
+  { name: 'K8s Pod Name', pattern: '[a-z0-9-]+-[a-z0-9]{5}-[a-z0-9]{5}', flag: '-E', example: 'my-app-7b4f9-xk2p9' },
+  { name: 'Stack Trace Line', pattern: '\\s+at\\s+\\S+\\(\\S+:[0-9]+:[0-9]+\\)', flag: '-P', example: '  at Object.<anonymous> (app.js:42:13)' },
+  { name: 'Docker Container ID', pattern: '[0-9a-f]{12}', flag: '-E', example: 'a1b2c3d4e5f6' },
+  { name: 'URL', pattern: 'https?://[a-zA-Z0-9./_?=&#-]+', flag: '-E', example: 'https://api.example.com/v2/users?page=1' },
+  { name: 'JSON Key-Value', pattern: '"[^"]+": *"[^"]+"', flag: '-E', example: '"userId": "12345"' },
+  { name: 'PID in logs', pattern: '\\[\\d+\\]', flag: '-E', example: '[12456]' },
+];
+
+function renderRegexPatterns() {
+  const container = document.getElementById('regexPatterns');
+  container.innerHTML = REGEX_PATTERNS.map(r => `
+    <div class="regex-item">
+      <div class="regex-label">${esc(r.name)}</div>
+      <div class="regex-pattern">
+        <span class="regex-val">${esc(r.pattern)}</span>
+        <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+          <span class="badge badge-blue">${r.flag}</span>
+          <button class="btn btn-ghost btn-xs" onclick="applyRegex('${esc(r.pattern).replace(/'/g,"\\'")}','${r.flag}')">Use</button>
+          <button class="btn btn-ghost btn-xs" onclick="copyText('grep ${r.flag} -o \\'${r.pattern.replace(/'/g,"\\'")}\\' file')">⎘</button>
+        </div>
+      </div>
+      <div class="regex-example">Example: ${esc(r.example)}</div>
+    </div>
+  `).join('');
+}
+
+function applyRegex(pattern, flag) {
+  document.getElementById('regexInput').value = pattern;
+  document.getElementById('regexTestStr').value = REGEX_PATTERNS.find(r => r.pattern === pattern)?.example || '';
+  testRegex();
+}
+
+function testRegex() {
+  const pat = document.getElementById('regexInput').value;
+  const str = document.getElementById('regexTestStr').value;
+  const resultEl = document.getElementById('regexResult');
+  const matchesEl = document.getElementById('regexMatches');
+  const cmdEl = document.getElementById('regexGrepCmd');
+
+  if (!pat) { resultEl.textContent = ''; matchesEl.textContent = ''; return; }
+
+  try {
+    const re = new RegExp(pat, 'gi');
+    const matches = [...str.matchAll(re)];
+    resultEl.textContent = '✓ Valid regex';
+    resultEl.className = 'validation-msg ok';
+
+    if (str) {
+      if (matches.length > 0) {
+        matchesEl.innerHTML = `<span style="color:var(--green2)">✓ ${matches.length} match${matches.length>1?'es':''} found</span>: ` +
+          matches.slice(0,5).map(m => `<mark>${esc(m[0])}</mark>`).join(', ');
+      } else {
+        matchesEl.innerHTML = '<span style="color:var(--text3)">No matches found in test string</span>';
+      }
+    }
+    cmdEl.innerHTML = `<span style="color:var(--accent)">grep</span> <span style="color:var(--yellow2)">-Po</span> <span style="color:var(--red2)">'${esc(pat)}'</span> <span style="color:var(--orange)">file.txt</span>`;
+  } catch(e) {
+    resultEl.textContent = '✗ ' + e.message;
+    resultEl.className = 'validation-msg error';
+    matchesEl.textContent = '';
+  }
+}
+
+// ===== FIND RECIPES =====
+function renderFindRecipes() {
+  const recipes = [
+    { desc: 'Find recently modified logs', cmd: 'find /var/log -type f -name "*.log" -mtime -1 -print0 | xargs -0 grep "ERROR"' },
+    { desc: 'Search only git-tracked files', cmd: 'git ls-files | xargs grep -n "TODO"' },
+    { desc: 'Find large log files then search', cmd: 'find . -name "*.log" -size +10M -print0 | xargs -0 grep -c "ERROR"' },
+    { desc: 'Search files modified today', cmd: 'find . -newer /tmp/stamp -type f | xargs grep "pattern"' },
+    { desc: 'Multi-extension search', cmd: 'find . \\( -name "*.js" -o -name "*.ts" \\) | xargs grep -n "async"' },
+  ];
+
+  document.getElementById('findRecipes').innerHTML = recipes.map(r => `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">${esc(r.desc)}</div>
+      <div class="code-block" style="margin:0;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <span style="color:var(--accent);font-size:11px;word-break:break-all;">${esc(r.cmd)}</span>
+        <button class="btn btn-ghost btn-xs" style="flex-shrink:0;" onclick="copyText('${r.cmd.replace(/'/g,"\\'")}')">⎘</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ===== DEVOPS CONTENT =====
+function renderDevops() {
+  const sections = [
+    {
+      title: '☸️ Kubernetes', color: 'var(--teal)',
+      examples: [
+        { desc: 'Search all pod logs for errors', cmd: 'kubectl logs --all-namespaces -l app=myapp 2>&1 | grep -i "error"' },
+        { desc: 'Find CrashLoopBackOff pods', cmd: 'kubectl get pods -A | grep "CrashLoop\\|Error\\|OOMKilled"' },
+        { desc: 'Grep events for warnings', cmd: "kubectl get events --sort-by='.lastTimestamp' -A | grep -E 'Warning|Error'" },
+        { desc: 'Search all configmaps', cmd: 'kubectl get cm -A -o yaml | grep -i "database"' },
+        { desc: 'Find pod by IP', cmd: 'kubectl get pods -A -o wide | grep "10.0.0."' },
+      ]
+    },
+    {
+      title: '🐳 Docker', color: 'var(--accent)',
+      examples: [
+        { desc: 'Search container logs', cmd: 'docker logs mycontainer 2>&1 | grep -i "error"' },
+        { desc: 'Real-time grep', cmd: 'docker logs -f mycontainer 2>&1 | grep --line-buffered "ERROR"' },
+        { desc: 'All containers for OOM', cmd: 'for c in $(docker ps -q); do docker logs $c 2>&1 | grep "OOM" && echo "Container: $c"; done' },
+        { desc: 'Docker compose errors', cmd: 'docker-compose logs --no-color 2>&1 | grep -E "error|exception|fatal"' },
+      ]
+    },
+    {
+      title: '🌐 Nginx / Apache', color: 'var(--green2)',
+      examples: [
+        { desc: 'Top 404 URLs', cmd: 'grep " 404 " /var/log/nginx/access.log | awk \'{print $7}\' | sort | uniq -c | sort -rn | head -20' },
+        { desc: 'Find slow requests (>2s)', cmd: 'grep "request_time" /var/log/nginx/access.log | awk \'$NF > 2\' | sort -k NF -rn' },
+        { desc: 'IPs with most 5xx errors', cmd: 'grep " 5[0-9][0-9] " /var/log/nginx/access.log | awk \'{print $1}\' | sort | uniq -c | sort -rn' },
+        { desc: 'Find POST requests with errors', cmd: "grep '\"POST' /var/log/nginx/access.log | grep ' [45][0-9][0-9] '" },
+      ]
+    },
+    {
+      title: '🗃️ PostgreSQL', color: 'var(--yellow2)',
+      examples: [
+        { desc: 'Slow queries', cmd: "grep -i 'duration' /var/log/postgresql/postgresql.log | grep -E 'duration: [0-9]{4,}'" },
+        { desc: 'Connection errors', cmd: "grep -E 'FATAL|ERROR' /var/log/postgresql/postgresql.log | grep -i 'connection'" },
+        { desc: 'Lock waits', cmd: "grep 'lock' /var/log/postgresql/postgresql.log | grep -i 'wait\\|timeout'" },
+      ]
+    },
+    {
+      title: '🔧 Systemd / journalctl', color: 'var(--purple)',
+      examples: [
+        { desc: 'Kernel errors today', cmd: 'journalctl -k --since today | grep -i "error\\|fail"' },
+        { desc: 'Service crash logs', cmd: 'journalctl -u myservice.service --since "1 hour ago" | grep -iE "error|fatal|crash"' },
+        { desc: 'OOM killer events', cmd: 'journalctl -k | grep -i "oom\\|killed process"' },
+        { desc: 'SSH failed logins', cmd: 'journalctl -u ssh --no-pager | grep "Failed password"' },
+      ]
+    },
+    {
+      title: '☁️ Azure AKS', color: 'var(--teal)',
+      examples: [
+        { desc: 'AKS node events', cmd: 'kubectl get events -n kube-system | grep -i "error\\|warning"' },
+        { desc: 'Azure CNI issues', cmd: 'kubectl logs -n kube-system -l component=azure-cni | grep "error"' },
+        { desc: 'Throttling issues', cmd: 'kubectl describe nodes | grep -i "throttl\\|pressure\\|diskpressure"' },
+      ]
+    },
+  ];
+
+  const container = document.getElementById('devopsContent');
+  container.innerHTML = `<div class="grid-2">` + sections.map(s => `
+    <div class="card mb-3">
+      <div class="card-header">
+        <div class="card-title"><span class="dot" style="background:${s.color}"></span>${esc(s.title)}</div>
+      </div>
+      <div class="card-body">
+        ${s.examples.map(e => `
+          <div style="margin-bottom:12px;">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">${esc(e.desc)}</div>
+            <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <code style="font-family:var(--mono);font-size:11px;color:var(--accent);word-break:break-all;flex:1;">${esc(e.cmd)}</code>
+              <button class="btn btn-ghost btn-xs" style="flex-shrink:0;" onclick="copyText('${e.cmd.replace(/'/g,"\\'").replace(/"/g,'&quot;')}')">⎘</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('') + '</div>';
+}
+
+// ===== CHEAT SHEET =====
+const FLAGS_DATA = [
+  { f: '-r', long: '--recursive', desc: 'Recursively search subdirectories', ex: 'grep -r "err" /var/log' },
+  { f: '-i', long: '--ignore-case', desc: 'Case-insensitive matching', ex: 'grep -i "ERROR" file.log' },
+  { f: '-n', long: '--line-number', desc: 'Show line number of each match', ex: 'grep -n "TODO" code.js' },
+  { f: '-w', long: '--word-regexp', desc: 'Match only whole words', ex: 'grep -w "cat" file.txt' },
+  { f: '-v', long: '--invert-match', desc: 'Show lines NOT matching pattern', ex: "grep -v '^#' config.conf" },
+  { f: '-E', long: '--extended-regexp', desc: 'Use extended regex (ERE)', ex: 'grep -E "foo|bar" file' },
+  { f: '-P', long: '--perl-regexp', desc: 'Use Perl-compatible regex (PCRE)', ex: "grep -P '\\d{3}-\\d{4}' file" },
+  { f: '-F', long: '--fixed-strings', desc: 'Fixed string, no regex interpretation', ex: 'grep -F "a.b.c" file' },
+  { f: '-c', long: '--count', desc: 'Print count of matching lines per file', ex: 'grep -rc "error" /logs' },
+  { f: '-l', long: '--files-with-matches', desc: 'Print only filenames with matches', ex: 'grep -rl "TODO" ./src' },
+  { f: '-L', long: '--files-without-match', desc: 'Print only filenames WITHOUT matches', ex: 'grep -rL "test" ./src' },
+  { f: '-h', long: '--no-filename', desc: 'Suppress filename prefix in output', ex: 'grep -rh "error" /logs' },
+  { f: '-o', long: '--only-matching', desc: 'Print only the matched part', ex: "grep -oE '\\d+' file.txt" },
+  { f: '-A N', long: '--after-context=N', desc: 'Show N lines after each match', ex: 'grep -A 3 "ERROR" app.log' },
+  { f: '-B N', long: '--before-context=N', desc: 'Show N lines before each match', ex: 'grep -B 2 "ERROR" app.log' },
+  { f: '-C N', long: '--context=N', desc: 'Show N lines around each match', ex: 'grep -C 3 "ERROR" app.log' },
+  { f: '-q', long: '--quiet', desc: 'Quiet mode; exit 0 if match found', ex: 'grep -q "error" file && echo "found"' },
+  { f: '-s', long: '--no-messages', desc: 'Suppress error messages', ex: 'grep -rs "err" /proc' },
+  { f: '-Z', long: '--null', desc: 'Null-terminate filenames (for xargs -0)', ex: 'grep -rlZ "TODO" | xargs -0 wc -l' },
+  { f: '--include', long: '--include=GLOB', desc: 'Only search files matching GLOB', ex: 'grep -r --include="*.js" "fn"' },
+  { f: '--exclude', long: '--exclude=GLOB', desc: 'Skip files matching GLOB', ex: 'grep -r --exclude="*.min.js" "fn"' },
+  { f: '--exclude-dir', long: '--exclude-dir=DIR', desc: 'Skip directories matching pattern', ex: 'grep -r --exclude-dir=node_modules "fn"' },
+  { f: '--color', long: '--color=WHEN', desc: 'Colorize matches (always/auto/never)', ex: 'grep --color=always "err" | less -R' },
+  { f: '--binary-files', long: '--binary-files=TYPE', desc: 'Handle binary files (text/binary/without-match)', ex: 'grep --binary-files=without-match -r "fn"' },
+  { f: '--max-depth', long: '--max-depth=N', desc: 'Descend at most N directory levels', ex: 'grep -r --max-depth=2 "fn" .' },
+  { f: '-e', long: '--regexp=PATTERN', desc: 'Use PATTERN as regex (allows multiple)', ex: 'grep -e "ERROR" -e "WARN" file' },
+  { f: '-f', long: '--file=FILE', desc: 'Read patterns from FILE', ex: 'grep -f patterns.txt log.txt' },
+  { f: '-m N', long: '--max-count=N', desc: 'Stop after N matches per file', ex: 'grep -m 5 "error" bigfile.log' },
+];
+
+function renderCheatsheet() {
+  document.getElementById('cheatsheetTable').innerHTML = FLAGS_DATA.map(f => `
+    <tr>
+      <td class="f-flag">${esc(f.f)}</td>
+      <td class="f-long">${esc(f.long)}</td>
+      <td class="f-desc">${esc(f.desc)}</td>
+      <td class="f-ex"><code>${esc(f.ex)}</code></td>
+    </tr>
+  `).join('');
+}
+
+// ===== UTILS =====
+function esc(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function copyText(text) {
+  const cleaned = text.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"');
+  navigator.clipboard.writeText(cleaned).then(() => showToast('✓ Copied!'));
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+function resetForm() {
+  document.getElementById('pattern').value = '';
+  document.getElementById('path').value = '.';
+  document.getElementById('extension').value = '';
+  document.getElementById('multiExt').value = '';
+  document.getElementById('excludeDirs').value = '';
+  document.getElementById('excludeFiles').value = '';
+  document.getElementById('maxDepth').value = '';
+  document.getElementById('before').value = '';
+  document.getElementById('after').value = '';
+  Object.keys(state).forEach(k => state[k] = false);
+  document.querySelectorAll('.toggle-item').forEach(el => el.classList.remove('active'));
+  buildCommand();
+}
+
+function refreshSimulation() {
+  const pattern = document.getElementById('pattern').value.trim();
+  const path = document.getElementById('path').value.trim() || '.';
+  let flags = '';
+  if (state.lineNumbers) flags += 'n';
+  if (state.countOnly) flags += 'c';
+  if (state.filenameOnly) flags += 'l';
+  if (state.invertMatch) flags += 'v';
+  renderSimulation(pattern, path, flags);
+}
+
+function toggleLearn(header) {
+  const body = header.nextElementSibling;
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const btn = document.getElementById('themeToggle');
+  const isLight = root.style.getPropertyValue('--bg') === '#ffffff';
+  if (!isLight) {
+    root.style.setProperty('--bg', '#ffffff');
+    root.style.setProperty('--bg2', '#f6f8fa');
+    root.style.setProperty('--bg3', '#eaeef2');
+    root.style.setProperty('--bg4', '#d0d7de');
+    root.style.setProperty('--text', '#1f2328');
+    root.style.setProperty('--text2', '#656d76');
+    root.style.setProperty('--text3', '#8c959f');
+    root.style.setProperty('--border', 'rgba(208,215,222,0.8)');
+    root.style.setProperty('--surface', 'rgba(246,248,250,0.9)');
+    btn.textContent = '🌙 Dark';
+  } else {
+    root.style.removeProperty('--bg');
+    root.style.removeProperty('--bg2');
+    root.style.removeProperty('--bg3');
+    root.style.removeProperty('--bg4');
+    root.style.removeProperty('--text');
+    root.style.removeProperty('--text2');
+    root.style.removeProperty('--text3');
+    root.style.removeProperty('--border');
+    root.style.removeProperty('--surface');
+    btn.textContent = '☀ Light';
+  }
+}
+
+function showShortcuts() {
+  const modal = document.getElementById('shortcutsModal');
+  modal.style.display = 'flex';
+}
+
+function exportCommands() {
+  const all = [...favorites.map(c => '★ ' + c), ...commandHistory];
+  if (all.length === 0) { showToast('No commands to export!'); return; }
+  const text = '# Grep Command Studio — Exported Commands\n' +
+    new Date().toISOString() + '\n\n' +
+    (favorites.length ? '## Favorites\n' + favorites.join('\n') + '\n\n' : '') +
+    '## History\n' + commandHistory.join('\n');
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'grep-commands.txt';
+  a.click();
+  showToast('✓ Exported!');
+}
+
+function exportCheatsheet() {
+  const text = FLAGS_DATA.map(f => `${f.f.padEnd(18)} ${f.long.padEnd(30)} ${f.desc}\n  Example: ${f.ex}`).join('\n\n');
+  const blob = new Blob(['# grep Cheat Sheet\n\n' + text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'grep-cheatsheet.txt';
+  a.click();
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === '/') { e.preventDefault(); document.getElementById('pattern').focus(); }
+  if (e.key === '1') switchTab('builder');
+  if (e.key === '2') switchTab('learn');
+  if (e.key === '3') switchTab('regex');
+  if ((e.ctrlKey || e.metaKey) && e.key === 'c') { e.preventDefault(); copyCommand(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); toggleFavorite(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'e') { e.preventDefault(); exportCommands(); }
+  if (e.key === 'Escape') { document.getElementById('shortcutsModal').style.display = 'none'; }
+});
+
+// Init find+grep builder
+buildFindGrep();
+</script>
+</body>
+</html>

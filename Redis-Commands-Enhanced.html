@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redis Kubectl Command Toolbox</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #ff6b6b;
+      --secondary: #4ecdc4;
+      --success: #51cf66;
+      --warning: #ffd43b;
+      --danger: #ff6b6b;
+      --dark: #2c3e50;
+      --light: #ecf0f1;
+      --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      --card-hover-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      padding: 20px;
+      color: var(--dark);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      color: white;
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 300;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .config-panel {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .input-group {
+      position: relative;
+    }
+
+    .input-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--dark);
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 15px 50px 15px 20px;
+      border: 2px solid #e1e8ed;
+      border-radius: 12px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      background: #f8f9fa;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--secondary);
+      background: white;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(78, 205, 196, 0.2);
+    }
+
+    .input-group .icon {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+      font-size: 18px;
+    }
+
+    .generate-btn {
+      background: linear-gradient(45deg, var(--secondary), #45b7b8);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 15px rgba(78, 205, 196, 0.3);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 auto;
+    }
+
+    .generate-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
+    }
+
+    .commands-grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    .category {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: var(--card-shadow);
+      transition: all 0.3s ease;
+      border-left: 6px solid;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .category::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, currentColor, transparent);
+      opacity: 0.3;
+    }
+
+    .category:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--card-hover-shadow);
+    }
+
+    .safe {
+      border-left-color: var(--success);
+      color: var(--success);
+    }
+
+    .moderate {
+      border-left-color: var(--warning);
+      color: var(--warning);
+    }
+
+    .critical {
+      border-left-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #f1f3f4;
+    }
+
+    .category-header h2 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--dark);
+      margin: 0;
+    }
+
+    .category-icon {
+      font-size: 1.5rem;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: currentColor;
+      color: white;
+    }
+
+    .command-item {
+      margin-bottom: 25px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 15px;
+      border: 1px solid #e9ecef;
+      transition: all 0.3s ease;
+    }
+
+    .command-item:hover {
+      background: #e9ecef;
+      transform: translateX(5px);
+    }
+
+    .command-header {
+      display: flex;
+      justify-content: between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .command-title {
+      font-weight: 600;
+      color: var(--dark);
+      font-size: 1.1rem;
+      flex: 1;
+    }
+
+    .command-description {
+      font-size: 0.9rem;
+      color: #6c757d;
+      margin-bottom: 10px;
+      font-style: italic;
+    }
+
+    .cmd-box {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 12px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      position: relative;
+      border: 1px solid #4a5568;
+      margin-bottom: 10px;
+      overflow-x: auto;
+    }
+
+    .cmd-box:empty::after {
+      content: 'Click "Generate Commands" to see the command here';
+      color: #a0aec0;
+      font-style: italic;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .copy-btn,
+    .run-btn,
+    .favorite-btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .copy-btn {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .copy-btn:hover {
+      background: #45b7b8;
+      transform: scale(1.05);
+    }
+
+    .copy-btn.copied {
+      background: var(--success);
+    }
+
+    .run-btn {
+      background: #6c757d;
+      color: white;
+    }
+
+    .run-btn:hover {
+      background: #5a6268;
+    }
+
+    .favorite-btn {
+      background: transparent;
+      color: #ffd43b;
+      border: 1px solid #ffd43b;
+    }
+
+    .favorite-btn.active,
+    .favorite-btn:hover {
+      background: #ffd43b;
+      color: white;
+    }
+
+    .sidebar {
+      position: fixed;
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: var(--card-shadow);
+      z-index: 1000;
+      max-width: 250px;
+    }
+
+    .sidebar h3 {
+      margin-bottom: 15px;
+      color: var(--dark);
+      font-size: 1.1rem;
+    }
+
+    .sidebar-item {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .sidebar-item:hover {
+      background: var(--secondary);
+      color: white;
+    }
+
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--success);
+      color: white;
+      padding: 15px 25px;
+      border-radius: 50px;
+      font-weight: 500;
+      box-shadow: 0 5px 15px rgba(81, 207, 102, 0.3);
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .search-box {
+      width: 100%;
+      padding: 15px 20px;
+      border: 2px solid #e1e8ed;
+      border-radius: 50px;
+      font-size: 16px;
+      margin-bottom: 20px;
+      background: white;
+      transition: all 0.3s ease;
+    }
+
+    .search-box:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.1);
+    }
+
+    .stats-bar {
+      display: flex;
+      justify-content: space-around;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 20px;
+      margin-bottom: 30px;
+      color: white;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: bold;
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+
+      .config-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header h1 {
+        font-size: 2rem;
+      }
+
+      .stats-bar {
+        flex-direction: column;
+        gap: 15px;
+      }
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1><i class="fas fa-terminal"></i> Redis Kubectl Command Toolbox</h1>
+      <p>Professional Redis management interface for Kubernetes environments</p>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-item">
+        <span class="stat-number" id="commandCount">15</span>
+        <span class="stat-label">Commands Available</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="copiedCount">0</span>
+        <span class="stat-label">Commands Copied</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-number" id="favoritesCount">0</span>
+        <span class="stat-label">Favorites</span>
+      </div>
+    </div>
+
+    <div class="config-panel">
+      <div class="config-grid">
+        <div class="input-group">
+          <label for="namespace"><i class="fas fa-layer-group"></i> Namespace</label>
+          <input type="text" id="namespace" placeholder="e.g., redis, production, staging" value="redis">
+          <i class="fas fa-cube icon"></i>
+        </div>
+        <div class="input-group">
+          <label for="pod"><i class="fas fa-server"></i> Pod Name</label>
+          <input type="text" id="pod" placeholder="e.g., rfr-redisfailover-0, redis-master-0"
+            value="rfr-redisfailover-0">
+          <i class="fas fa-microchip icon"></i>
+        </div>
+        <div class="input-group">
+          <label for="defaultKey"><i class="fas fa-key"></i> Default Key (Optional)</label>
+          <input type="text" id="defaultKey" placeholder="e.g., user:123, config:app, session:token">
+          <i class="fas fa-tag icon"></i>
+        </div>
+      </div>
+
+      <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search commands...">
+
+      <button class="generate-btn" onclick="generateCommands()">
+        <i class="fas fa-magic"></i>
+        Generate Commands
+      </button>
+    </div>
+
+    <div class="commands-grid" id="commandsGrid">
+      <!-- Commands will be generated here -->
+    </div>
+  </div>
+
+  <div class="sidebar">
+    <h3><i class="fas fa-bookmark"></i> Quick Actions</h3>
+    <div class="sidebar-item" onclick="clearInputs()">
+      <i class="fas fa-trash"></i> Clear Inputs
+    </div>
+    <div class="sidebar-item" onclick="exportCommands()">
+      <i class="fas fa-download"></i> Export Commands
+    </div>
+    <div class="sidebar-item" onclick="showHelp()">
+      <i class="fas fa-question-circle"></i> Help
+    </div>
+    <div class="sidebar-item" onclick="toggleTheme()">
+      <i class="fas fa-palette"></i> Theme
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastMessage">Action completed!</span>
+  </div>
+
+  <script>
+    // State management
+    let state = {
+      copiedCount: 0,
+      favoritesCount: 0,
+      favorites: new Set(),
+      commands: []
+    };
+
+    // Command definitions with enhanced metadata
+    const commandDefinitions = [
+      {
+        category: 'safe',
+        icon: 'fas fa-code',
+        title: 'GET + jq JSON',
+        description: 'Retrieve and parse JSON data with jq',
+        template: (base) => `${base} --raw GET {{json_key}} | jq`,
+        placeholder: 'your_json_key',
+        examples: ['api:response:123', 'config:json']
+      },
+      {
+        category: 'safe',
+        icon: 'fas fa-code',
+        title: 'MGET + jq JSON',
+        description: 'Retrieve and parse JSON data with jq',
+        template: (base) => `${base} --raw MGET {{json_key}} | jq`,
+        placeholder: 'your_json_key',
+        examples: ['api:response:123', 'config:json']
+      },
+      {
+        category: 'safe',
+        icon: 'fas fa-eye',
+        title: 'GET Key',
+        description: 'Retrieve the value of a specific key',
+        template: (base) => `${base} GET {{key}}`,
+        placeholder: 'your_key',
+        examples: ['user:123', 'config:app', 'session:abc123']
+      },
+      {
+        category: 'safe',
+        icon: 'fas fa-list',
+        title: 'MGET Multiple Keys',
+        description: 'Retrieve multiple key values in one command',
+        template: (base) => `${base} --raw MGET {{keys}}`,
+        placeholder: 'key1 key2 key3',
+        examples: ['user:1 user:2 user:3', 'config:db config:cache']
+      },
+      {
+        category: 'safe',
+        icon: 'fas fa-table',
+        title: 'HGETALL Hash',
+        description: 'Get all fields and values from a hash',
+        template: (base) => `${base} --raw HGETALL {{hash_key}}`,
+        placeholder: 'your_hash_key',
+        examples: ['user:profile:123', 'config:settings']
+      },
+
+      {
+        category: 'safe',
+        icon: 'fas fa-info-circle',
+        title: 'INFO Server',
+        description: 'Get Redis server information and statistics',
+        template: (base) => `${base} INFO`,
+        placeholder: '',
+        examples: []
+      },
+      {
+        category: 'safe',
+        icon: 'fas fa-key',
+        title: 'KEYS Pattern',
+        description: 'Find keys matching a pattern (use carefully in production)',
+        template: (base) => `${base} KEYS {{pattern}}`,
+        placeholder: 'user:*',
+        examples: ['user:*', 'config:*', '*:session']
+      },
+      {
+        category: 'safe',
+        icon: 'fas fa-hashtag',
+        title: 'TYPE Key',
+        description: 'Get the data type of a key',
+        template: (base) => `${base} TYPE {{key}}`,
+        placeholder: 'your_key',
+        examples: ['user:123', 'config:list']
+      },
+      {
+        category: 'safe',
+        icon: 'fas fa-clock',
+        title: 'TTL Key',
+        description: 'Get the remaining time to live of a key',
+        template: (base) => `${base} TTL {{key}}`,
+        placeholder: 'your_key',
+        examples: ['session:abc123', 'cache:temp']
+      },
+      {
+        category: 'moderate',
+        icon: 'fas fa-plus',
+        title: 'SET Key Value',
+        description: 'Set a key-value pair',
+        template: (base) => `${base} SET {{key}} "{{value}}"`,
+        placeholder: 'your_key "your_value"',
+        examples: ['user:name "John Doe"', 'config:env "production"']
+      },
+      {
+        category: 'moderate',
+        icon: 'fas fa-trash-alt',
+        title: 'DEL Key',
+        description: 'Delete one or more keys',
+        template: (base) => `${base} DEL {{keys}}`,
+        placeholder: 'your_key',
+        examples: ['user:123', 'cache:old temp:data']
+      },
+      {
+        category: 'moderate',
+        icon: 'fas fa-clock',
+        title: 'EXPIRE Key',
+        description: 'Set expiration time for a key',
+        template: (base) => `${base} EXPIRE {{key}} {{seconds}}`,
+        placeholder: 'your_key 3600',
+        examples: ['session:abc123 1800', 'cache:temp 300']
+      },
+      {
+        category: 'moderate',
+        icon: 'fas fa-edit',
+        title: 'RENAME Key',
+        description: 'Rename a key',
+        template: (base) => `${base} RENAME {{old_key}} {{new_key}}`,
+        placeholder: 'old_key new_key',
+        examples: ['user:old user:new', 'temp:data final:data']
+      },
+      {
+        category: 'critical',
+        icon: 'fas fa-exclamation-triangle',
+        title: 'FLUSHALL',
+        description: 'Delete ALL data in the Redis instance',
+        template: (base) => `${base} FLUSHALL  # DANGER: Deletes ALL data`,
+        placeholder: '',
+        examples: []
+      },
+      {
+        category: 'critical',
+        icon: 'fas fa-database',
+        title: 'FLUSHDB',
+        description: 'Delete all data in the current database',
+        template: (base) => `${base} FLUSHDB  # DANGER: Deletes current DB`,
+        placeholder: '',
+        examples: []
+      },
+      {
+        category: 'critical',
+        icon: 'fas fa-power-off',
+        title: 'SHUTDOWN',
+        description: 'Shutdown the Redis server',
+        template: (base) => `${base} SHUTDOWN  # DANGER: Stops Redis server`,
+        placeholder: '',
+        examples: []
+      }
+    ];
+
+    // Initialize the application
+    function init() {
+      generateCommands();
+      setupEventListeners();
+      updateStats();
+    }
+
+    function setupEventListeners() {
+      document.getElementById('searchBox').addEventListener('input', filterCommands);
+      document.getElementById('namespace').addEventListener('input', generateCommands);
+      document.getElementById('pod').addEventListener('input', generateCommands);
+
+      // Auto-generate on input change
+      let debounceTimer;
+      ['namespace', 'pod', 'defaultKey'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(generateCommands, 300);
+        });
+      });
+    }
+
+    function generateCommands() {
+      const namespace = document.getElementById('namespace').value.trim();
+      const pod = document.getElementById('pod').value.trim();
+      const defaultKey = document.getElementById('defaultKey').value.trim();
+
+      if (!namespace || !pod) {
+        return;
+      }
+
+      const base = `kubectl exec -n ${namespace} ${pod} -- redis-cli`;
+      const grid = document.getElementById('commandsGrid');
+
+      // Group commands by category
+      const categories = {
+        safe: { title: '🟢 Safe Operations', icon: 'fas fa-shield-alt', commands: [] },
+        moderate: { title: '🟠 Moderate Risk', icon: 'fas fa-exclamation-triangle', commands: [] },
+        critical: { title: '🔴 Critical Operations', icon: 'fas fa-skull-crossbones', commands: [] }
+      };
+
+      commandDefinitions.forEach((cmd, index) => {
+        // Use default key if provided, otherwise use placeholder
+        const keyToUse = defaultKey || cmd.placeholder;
+
+        const command = {
+          ...cmd,
+          id: `cmd-${index}`,
+          fullCommand: cmd.template(base).replace('{{key}}', keyToUse)
+            .replace('{{keys}}', keyToUse)
+            .replace('{{hash_key}}', keyToUse)
+            .replace('{{json_key}}', keyToUse)
+            .replace('{{pattern}}', keyToUse)
+            .replace('{{value}}', keyToUse.split('"')[1] || 'value')
+            .replace('{{seconds}}', keyToUse.split(' ')[1] || 'seconds')
+            .replace('{{old_key}}', keyToUse.split(' ')[0] || 'old_key')
+            .replace('{{new_key}}', keyToUse.split(' ')[1] || 'new_key')
+        };
+        categories[cmd.category].commands.push(command);
+      });
+
+      state.commands = Object.values(categories).flatMap(cat => cat.commands);
+
+      grid.innerHTML = Object.entries(categories).map(([key, category]) => `
+        <div class="category ${key}">
+          <div class="category-header">
+            <div class="category-icon">
+              <i class="${category.icon}"></i>
+            </div>
+            <h2>${category.title}</h2>
+          </div>
+          ${category.commands.map(cmd => `
+            <div class="command-item" data-command-id="${cmd.id}">
+              <div class="command-header">
+                <div class="command-title">
+                  <i class="${cmd.icon}"></i> ${cmd.title}
+                </div>
+              </div>
+              <div class="command-description">${cmd.description}</div>
+              <div class="cmd-box" id="${cmd.id}">${cmd.fullCommand}</div>
+              <div class="action-buttons">
+                <button class="copy-btn" onclick="copyCommand('${cmd.id}')">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="favorite-btn ${state.favorites.has(cmd.id) ? 'active' : ''}" onclick="toggleFavorite('${cmd.id}')">
+                  <i class="fas fa-star"></i> Favorite
+                </button>
+              </div>
+              ${cmd.examples.length > 0 ? `
+                <div style="margin-top: 10px; font-size: 0.8rem; color: #6c757d;">
+                  <strong>Examples:</strong> ${cmd.examples.join(', ')}
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    function copyCommand(commandId) {
+      const cmdBox = document.getElementById(commandId);
+      const text = cmdBox.textContent;
+
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector(`[onclick="copyCommand('${commandId}')"]`);
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        btn.classList.add('copied');
+
+        state.copiedCount++;
+        updateStats();
+        showToast('Command copied to clipboard!');
+
+        setTimeout(() => {
+          btn.innerHTML = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+      }).catch(() => {
+        showToast('Failed to copy command', 'error');
+      });
+    }
+
+    function toggleFavorite(commandId) {
+      const btn = document.querySelector(`[onclick="toggleFavorite('${commandId}')"]`);
+
+      if (state.favorites.has(commandId)) {
+        state.favorites.delete(commandId);
+        btn.classList.remove('active');
+        state.favoritesCount--;
+        showToast('Removed from favorites');
+      } else {
+        state.favorites.add(commandId);
+        btn.classList.add('active');
+        state.favoritesCount++;
+        showToast('Added to favorites');
+      }
+
+      updateStats();
+    }
+
+    function filterCommands() {
+      const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+      const commandItems = document.querySelectorAll('.command-item');
+
+      commandItems.forEach(item => {
+        const title = item.querySelector('.command-title').textContent.toLowerCase();
+        const description = item.querySelector('.command-description').textContent.toLowerCase();
+        const command = item.querySelector('.cmd-box').textContent.toLowerCase();
+
+        if (title.includes(searchTerm) || description.includes(searchTerm) || command.includes(searchTerm)) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+
+      toastMessage.textContent = message;
+      toast.className = `toast ${type}`;
+      toast.classList.add('show');
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    function updateStats() {
+      document.getElementById('copiedCount').textContent = state.copiedCount;
+      document.getElementById('favoritesCount').textContent = state.favoritesCount;
+    }
+
+    function clearInputs() {
+      document.getElementById('namespace').value = '';
+      document.getElementById('pod').value = '';
+      document.getElementById('defaultKey').value = '';
+      document.getElementById('searchBox').value = '';
+      document.getElementById('commandsGrid').innerHTML = '';
+      showToast('Inputs cleared');
+    }
+
+    function exportCommands() {
+      const commands = state.commands
+        .filter(cmd => state.favorites.has(cmd.id))
+        .map(cmd => cmd.fullCommand)
+        .join('\n');
+
+      if (commands) {
+        const blob = new Blob([commands], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'redis-commands.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Favorite commands exported!');
+      } else {
+        showToast('No favorite commands to export', 'error');
+      }
+    }
+
+    function showHelp() {
+      alert(`Redis Kubectl Command Toolbox Help:
+
+🔍 Search: Use the search box to filter commands
+⭐ Favorites: Click the star button to save frequently used commands
+📋 Copy: Click copy to add commands to your clipboard
+📁 Export: Export your favorite commands to a text file
+
+Command Categories:
+🟢 Safe: Read-only operations, no data modification
+🟠 Moderate: Operations that modify specific data
+🔴 Critical: Dangerous operations that affect entire database
+
+Tips:
+- Always test commands in a development environment first
+- Use KEYS command sparingly in production
+- Consider using SCAN instead of KEYS for large datasets`);
+    }
+
+    function toggleTheme() {
+      document.body.classList.toggle('dark-theme');
+      showToast('Theme toggled!');
+    }
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+
+</html>
